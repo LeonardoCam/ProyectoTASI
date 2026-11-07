@@ -1,0 +1,16 @@
+# Entornos virtuales y caché de Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+
+# Dependencias de Angular (El frontend ya tiene el suyo, pero aseguramos la raíz)
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+
+# Archivos del sistema operativo y editores
+.vscode/
+.DS_Store

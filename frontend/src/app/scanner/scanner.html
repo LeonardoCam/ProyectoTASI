@@ -1,0 +1,42 @@
+<div class="scanner-container">
+  <h2>Expansión y Evaluación de URLs</h2>
+  
+  <div class="search-box">
+    <input 
+      type="url" 
+      [(ngModel)]="inputUrl" 
+      placeholder="Ingresa la URL acortada (ej. https://bit.ly/...)"
+      (keyup.enter)="analyzeUrl()"
+    />
+    <button (click)="analyzeUrl()" [disabled]="isLoading || !inputUrl">
+      {{ isLoading ? 'Analizando...' : 'Verificar Destino' }}
+    </button>
+  </div>
+
+  <div *ngIf="errorMessage" class="error-alert">
+    {{ errorMessage }}
+  </div>
+
+  <div *ngIf="result" class="result-card">
+    <div class="risk-indicator" [style.backgroundColor]="getRiskColor(result.risk_level)">
+      Nivel de Riesgo Heurístico: <strong>{{ result.risk_level }}</strong>
+    </div>
+
+    <div class="details">
+      <p><strong>Destino Final Real:</strong> <a [href]="result.final_url" target="_blank">{{ result.final_url }}</a></p>
+      <p><strong>Dominio Base:</strong> {{ result.domain }}</p>
+      <p><strong>Antigüedad del Dominio:</strong> 
+        {{ result.domain_age_days !== null ? result.domain_age_days + ' días' : 'Datos WHOIS protegidos' }}
+      </p>
+      
+      <div class="redirect-chain">
+        <strong>Trazabilidad de Saltos (Redirecciones):</strong>
+        <ul>
+          <li *ngFor="let step of result.redirect_chain; let i = index">
+            Salto {{ i + 1 }}: {{ step }}
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
