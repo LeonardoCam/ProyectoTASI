@@ -1,0 +1,11 @@
+services:
+  api:
+    build: .
+    ports: ["8000:8000"]
+    environment:
+      ALLOWED_ORIGINS: "http://localhost:4200,http://localhost:8080"
+      SAFE_BROWSING_API_KEY: "${SAFE_BROWSING_API_KEY:-}"
+  web:
+    build: ./frontend
+    ports: ["8080:80"]
+    depends_on: [api]

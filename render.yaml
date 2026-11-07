@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: proyecto-tasi-api
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: ALLOWED_ORIGINS
+        value: https://TU-FRONTEND.example   # reemplazar por el dominio del frontend
+      - key: SAFE_BROWSING_API_KEY
+        sync: false                          # se configura en el panel de Render

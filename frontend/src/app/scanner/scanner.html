@@ -1,42 +1,87 @@
 <div class="scanner-container">
   <h2>Expansión y Evaluación de URLs</h2>
-  
+  <p class="subtitle">Conoce el destino real de un enlace acortado antes de abrirlo.</p>
+
   <div class="search-box">
-    <input 
-      type="url" 
-      [(ngModel)]="inputUrl" 
+    <input
+      type="url"
+      [(ngModel)]="inputUrl"
       placeholder="Ingresa la URL acortada (ej. https://bit.ly/...)"
       (keyup.enter)="analyzeUrl()"
+      aria-label="URL a analizar"
     />
-    <button (click)="analyzeUrl()" [disabled]="isLoading || !inputUrl">
+    <button (click)="analyzeUrl()" [disabled]="isLoading || !inputUrl.trim()">
       {{ isLoading ? 'Analizando...' : 'Verificar Destino' }}
     </button>
   </div>
 
-  <div *ngIf="errorMessage" class="error-alert">
-    {{ errorMessage }}
-  </div>
+  @if (errorMessage) {
+    <div class="error-alert" role="alert">{{ errorMessage }}</div>
+  }
 
-  <div *ngIf="result" class="result-card">
-    <div class="risk-indicator" [style.backgroundColor]="getRiskColor(result.risk_level)">
-      Nivel de Riesgo Heurístico: <strong>{{ result.risk_level }}</strong>
-    </div>
+  @if (result; as r) {
+    <div class="result-card">
+      <div class="risk-header" [style.backgroundColor]="getRiskColor(r.risk_level)">
+        <div class="traffic-light" aria-hidden="true">
+          <span class="light red" [class.on]="isLit('ALTO')"></span>
+          <span class="light yellow" [class.on]="isLit('MEDIO')"></span>
+          <span class="light green" [class.on]="isLit('BAJO')"></span>
+        </div>
+        <div>
+          <div class="score">{{ r.risk_score }}<small>/100</small></div>
+          <div class="level">Riesgo {{ r.risk_level }}</div>
+        </div>
+      </div>
 
-    <div class="details">
-      <p><strong>Destino Final Real:</strong> <a [href]="result.final_url" target="_blank">{{ result.final_url }}</a></p>
-      <p><strong>Dominio Base:</strong> {{ result.domain }}</p>
-      <p><strong>Antigüedad del Dominio:</strong> 
-        {{ result.domain_age_days !== null ? result.domain_age_days + ' días' : 'Datos WHOIS protegidos' }}
-      </p>
-      
-      <div class="redirect-chain">
-        <strong>Trazabilidad de Saltos (Redirecciones):</strong>
-        <ul>
-          <li *ngFor="let step of result.redirect_chain; let i = index">
-            Salto {{ i + 1 }}: {{ step }}
-          </li>
-        </ul>
+      <div class="details">
+        <p class="recommendation">{{ recommendation(r.risk_level) }}</p>
+
+        @if (r.factors.length) {
+          <div class="section">
+            <strong>¿Por qué este resultado?</strong>
+            <ul class="factors">
+              @for (f of r.factors; track f.id) {
+                <li><span class="pts">+{{ f.points }}</span> {{ f.description }}</li>
+              }
+            </ul>
+          </div>
+        }
+
+        <div class="section">
+          <p>
+            <strong>Destino final:</strong>&nbsp;
+            @if (r.risk_level === 'ALTO') {
+              <code>{{ r.final_url }}</code>
+              <em class="muted">(enlace desactivado por seguridad)</em>
+            } @else {
+              <a [href]="r.final_url" target="_blank" rel="noopener noreferrer nofollow">{{ r.final_url }}</a>
+            }
+          </p>
+          <p><strong>Dominio:</strong> {{ r.domain }}</p>
+          <p>
+            <strong>Antigüedad:</strong>
+            {{ r.domain_age_days !== null ? r.domain_age_days + ' días' : 'No disponible (WHOIS protegido)' }}
+          </p>
+          <p><strong>Protocolo:</strong> {{ r.https ? 'HTTPS' : 'HTTP (sin cifrar)' }}</p>
+          <p>
+            <strong>Reputación externa:</strong>
+            {{ r.reputation_checked ? 'Consultada, sin coincidencias' : 'No consultada' }}
+          </p>
+        </div>
+
+        <div class="section">
+          <strong>Trazabilidad ({{ r.hops }} {{ r.hops === 1 ? 'salto' : 'saltos' }}):</strong>
+          <ol class="chain">
+            @for (step of r.redirect_chain; track $index) {
+              <li>{{ step }}</li>
+            }
+          </ol>
+        </div>
+
+        <p class="meta">
+          {{ r.cached ? 'Resultado desde memoria (caché)' : 'Análisis nuevo' }} · {{ r.elapsed_ms }} ms
+        </p>
       </div>
     </div>
-  </div>
+  }
 </div>
