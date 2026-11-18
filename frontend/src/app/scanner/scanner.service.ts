@@ -20,6 +20,7 @@ export interface ScanResponse {
   registered_domain: string;
   domain_age_days: number | null;
   cert_age_days?: number | null;
+  page_title?: string | null;
   domain_exists: boolean;
   reachable: boolean;
   dns_note: string | null;
@@ -47,5 +48,10 @@ export class ScannerService {
 
   scanUrl(url: string): Observable<ScanResponse> {
     return this.http.post<ScanResponse>(this.apiUrl, { url });
+  }
+
+  sendFeedback(url: string, feedbackType: string, comment?: string): Observable<any> {
+    const feedbackUrl = `${environment.apiUrl}/feedback`;
+    return this.http.post(feedbackUrl, { url, feedback_type: feedbackType, comment });
   }
 }

@@ -67,6 +67,29 @@ class URLRequest(BaseModel):
     url: str = Field(..., max_length=config.MAX_URL_LENGTH)
 
 
+class FeedbackRequest(BaseModel):
+    url: str
+    feedback_type: str = Field(..., description="'ok' para veredicto acertado, 'fp' para falso positivo")
+    comment: Optional[str] = None
+
+
+_feedback_log: list[dict] = []
+
+
+@app.post("/api/v1/feedback")
+async def submit_feedback(fb: FeedbackRequest):
+    entry = {
+        "url": fb.url,
+        "type": fb.feedback_type,
+        "comment": fb.comment,
+        "received_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+    _feedback_log.append(entry)
+    if len(_feedback_log) > 200:
+        _feedback_log.pop(0)
+    return {"status": "ok", "message": "Gracias por tu reporte. Se ha registrado para auditoría y mejora continua."}
+
+
 def _toggle_www(url: str) -> str:
     parts = urlsplit(url)
     host = parts.hostname or ""
@@ -150,7 +173,8 @@ async def _expand(req: URLRequest, request: Request):
 
     async def _assess(final_url: str, chain: list[str], hops: int, visited: bool, matches, vt=None,
                       not_found: bool = False, reachable: bool = True,
-                      redirect_problem: Optional[str] = None) -> dict:
+                      redirect_problem: Optional[str] = None,
+                      page_title: Optional[str] = None) -> dict:
         host = (urlsplit(final_url).hostname or "").lower()
         domain = heuristics.registrable_domain(host)
         tasks = [domain_info.domain_age_days(domain), reputation.is_flagged(final_url)]
@@ -167,7 +191,8 @@ async def _expand(req: URLRequest, request: Request):
         cert_age = results[idx] if len(results) > idx else None
 
         score, factors = heuristics.evaluate(final_url, hops, age, flagged, matches, vt, domain_not_found=not_found,
-                                             redirect_problem=redirect_problem, cert_age_days=cert_age)
+                                             redirect_problem=redirect_problem, cert_age_days=cert_age,
+                                             page_title=page_title)
         result = {
             "input_url": req.url.strip(),
             "original_url": url,
@@ -179,6 +204,7 @@ async def _expand(req: URLRequest, request: Request):
             "registered_domain": domain,
             "domain_age_days": age,
             "cert_age_days": cert_age,
+            "page_title": page_title,
             "domain_exists": not not_found,
             "reachable": reachable and not not_found,
             "dns_note": dns_note,
@@ -237,4 +263,4 @@ async def _expand(req: URLRequest, request: Request):
             if (m.source, m.matched) not in seen:
                 seen.add((m.source, m.matched))
                 matches.append(m)
-    return await _assess(exp.final_url, exp.chain, exp.hops, True, matches)
+    return await _assess(exp.final_url, exp.chain, exp.hops, True, matches, page_title=exp.title)

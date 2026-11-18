@@ -33,6 +33,109 @@
   cursor: not-allowed;
 }
 
+/* --- Ejemplos rápidos de prueba --- */
+.quick-examples {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: -10px;
+  margin-bottom: 22px;
+}
+.examples-label {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+}
+.chip {
+  padding: 5px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease-in-out;
+  background: #f3f4f6;
+  color: #374151;
+}
+.chip:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+.chip-safe {
+  background: #ecfdf5;
+  color: #065f46;
+  border-color: #a7f3d0;
+}
+.chip-warning {
+  background: #fffbeb;
+  color: #92400e;
+  border-color: #fde68a;
+}
+.chip-danger {
+  background: #fef2f2;
+  color: #991b1b;
+  border-color: #fecaca;
+}
+
+/* --- Barra de acciones forenses y feedback --- */
+.action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+.btn-action {
+  padding: 7px 14px;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-action:hover {
+  background: #1d4ed8;
+}
+.feedback-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.feedback-label {
+  color: #6b7280;
+}
+.btn-fb {
+  padding: 4px 8px;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-fb:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+.btn-fb:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.feedback-toast {
+  font-size: 12px;
+  color: #15803d;
+  font-weight: 600;
+}
+
 .error-alert {
   padding: 12px;
   background-color: #fee2e2;

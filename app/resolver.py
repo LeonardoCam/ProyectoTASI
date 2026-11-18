@@ -4,6 +4,7 @@ Se siguen los saltos manualmente para validar CADA destino contra SSRF antes de 
 detectar bucles y no descargar el cuerpo de las respuestas.
 """
 import random
+import re
 from dataclasses import dataclass, field
 from typing import Optional
 from urllib.parse import urljoin
@@ -38,6 +39,7 @@ class Expansion:
     final_url: str
     chain: list[str] = field(default_factory=list)   # URLs visitadas, incluida la inicial y la final
     status_code: Optional[int] = None
+    title: Optional[str] = None
 
     @property
     def hops(self) -> int:
@@ -96,6 +98,21 @@ async def expand(url: str, transport: Optional[httpx.AsyncBaseTransport] = None)
                 chain.append(nxt)
                 current = nxt
                 continue
-            return Expansion(final_url=current, chain=chain, status_code=status)
+
+            # Extracción segura de título HTML (primeros 4 KB de la respuesta final, sin descargar archivos grandes)
+            title = None
+            try:
+                ctype = resp.headers.get("content-type", "").lower()
+                if "text/html" in ctype or not ctype:
+                    chunk = await anext(resp.aiter_bytes(), b"")
+                    if chunk:
+                        text = chunk[:4096].decode("utf-8", errors="replace")
+                        m = re.search(r"<title[^>]*>(.*?)</title>", text, re.IGNORECASE | re.DOTALL)
+                        if m:
+                            title = " ".join(m.group(1).split())[:120]
+            except Exception:
+                pass
+
+            return Expansion(final_url=current, chain=chain, status_code=status, title=title)
 
     raise TooManyRedirectsError(f"La cadena supera el máximo de {config.MAX_REDIRECTS} saltos.")

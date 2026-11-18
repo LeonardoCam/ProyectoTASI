@@ -66,6 +66,19 @@ def test_cert_age_factors():
     assert "cert_established" in ids(f_mature)
 
 
+def test_title_impersonation():
+    # Título que contiene una marca bancaria en un dominio no oficial
+    score, f = h.evaluate("https://portal-sorteo-premios.com/", hops=0, domain_age_days=1000,
+                          page_title="Bienvenido a tu Banca por Internet BCP")
+    assert "title_impersonation" in ids(f)
+    assert score >= 35
+
+    # Título en dominio oficial de la marca: no debe marcarse suplantación
+    score_of, f_of = h.evaluate("https://bcpzonasegura.viabcp.com/", hops=0, domain_age_days=1000,
+                                page_title="Banca por Internet BCP")
+    assert "title_impersonation" not in ids(f_of)
+
+
 def test_score_never_negative():
     # Puntaje nunca baja de 0 incluso si los atenuadores superan los puntos
     score, f = h.evaluate("https://github.com/", hops=0, domain_age_days=4000, cert_age_days=100)

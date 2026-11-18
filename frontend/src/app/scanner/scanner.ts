@@ -32,6 +32,9 @@ export class ScannerComponent {
   isLoading = false;
   errorMessage = '';
   history: HistoryItem[] = [];
+  copiedReport = false;
+  feedbackSent = false;
+  feedbackMsg = '';
 
   constructor(private scannerService: ScannerService, private cdr: ChangeDetectorRef) {}
 
@@ -42,6 +45,8 @@ export class ScannerComponent {
     this.isLoading = true;
     this.errorMessage = '';
     this.result = null;
+    this.feedbackSent = false;
+    this.feedbackMsg = '';
 
     this.scannerService.scanUrl(url).subscribe({
       next: (data) => {
@@ -123,5 +128,58 @@ export class ScannerComponent {
       case 'MEDIO': return 'Procede con precaución: verifica el remitente y no ingreses credenciales.';
       default: return 'No se detectaron señales de riesgo relevantes, pero mantén la precaución habitual.';
     }
+  }
+
+  loadExample(url: string): void {
+    this.inputUrl = url;
+    this.analyzeUrl();
+  }
+
+  copyForensicReport(r: ScanResponse): void {
+    const factorsText = r.factors.length
+      ? r.factors.map((f) => `  * [${f.points > 0 ? '+' : ''}${f.points}] ${f.description}`).join('\n')
+      : '  * Ningún factor de riesgo detectado.';
+
+    const report = [
+      '# Reporte Forense de Evaluación de Enlace (TASI - UPCH)',
+      `- Fecha y hora: ${r.analyzed_at}`,
+      `- Enlace ingresado: ${r.input_url}`,
+      `- Destino final: ${r.final_url}`,
+      `- Dominio registrado: ${r.registered_domain}`,
+      `- Nivel de riesgo: ${r.risk_level} (${r.risk_score}/100)`,
+      `- Protocolo: ${r.https ? 'HTTPS (Cifrado)' : 'HTTP (Sin cifrar)'}`,
+      `- Saltos de redirección: ${r.hops}`,
+      `- Antigüedad de dominio: ${r.domain_age_days !== null ? r.domain_age_days + ' días' : 'No disponible (WHOIS protegido)'}`,
+      r.page_title ? `- Título de la página: "${r.page_title}"` : null,
+      r.cert_age_days !== undefined && r.cert_age_days !== null ? `- Certificado SSL: emitido hace ${r.cert_age_days} días` : null,
+      '- Factores evaluados:',
+      factorsText,
+      '- Cadena de trazabilidad:',
+      ...r.redirect_chain.map((c, i) => `  ${i + 1}. ${c}`),
+    ].filter(Boolean).join('\n');
+
+    navigator.clipboard.writeText(report).then(() => {
+      this.copiedReport = true;
+      this.cdr.detectChanges();
+      setTimeout(() => {
+        this.copiedReport = false;
+        this.cdr.detectChanges();
+      }, 3000);
+    });
+  }
+
+  sendFeedback(type: string): void {
+    if (!this.result || this.feedbackSent) return;
+    this.feedbackSent = true;
+    this.scannerService.sendFeedback(this.result.final_url, type).subscribe({
+      next: () => {
+        this.feedbackMsg = type === 'ok' ? '¡Gracias por confirmar!' : 'Reporte registrado para revisión.';
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.feedbackMsg = 'Reporte registrado localmente.';
+        this.cdr.detectChanges();
+      },
+    });
   }
 }

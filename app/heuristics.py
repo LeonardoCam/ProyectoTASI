@@ -1,4 +1,4 @@
-﻿"""Motor heurístico determinista: puntaje de riesgo 0-100 con factores explicables."""
+"""Motor heurístico determinista: puntaje de riesgo 0-100 con factores explicables."""
 import ipaddress
 import re
 from dataclasses import dataclass, asdict
@@ -212,6 +212,7 @@ def evaluate(
     domain_not_found: bool = False,
     redirect_problem: Optional[str] = None,
     cert_age_days: Optional[int] = None,
+    page_title: Optional[str] = None,
 ) -> tuple[int, list[dict]]:
     """Devuelve (puntaje 0-100, factores). Todo factor que suma puntos queda justificado."""
     parts = urlsplit(final_url)
@@ -361,6 +362,20 @@ def evaluate(
         brand_domain_in_path = not is_brand_domain and bool(BRAND_DOMAIN_IN_PATH.search(path))
         if DOMAIN_IN_PATH.search(path) or brand_domain_in_path:
             add("domain_in_path", "La ruta contiene otro nombre de dominio, para aparentar ser ese sitio.", 10)
+
+        # Suplantación en el título de la página (phishing con dominio camuflado)
+        if page_title and not is_brand_domain and not is_trusted:
+            t_lower = page_title.lower()
+            t_brand = None
+            for brand in BRANDS:
+                if brand in t_lower:
+                    t_brand = brand
+                    break
+            if not t_brand and ("banco de crédito" in t_lower or "banco de credito" in t_lower):
+                t_brand = "bcp"
+            if t_brand:
+                add("title_impersonation",
+                    f"El título de la página ('{page_title[:60]}') contiene la marca '{t_brand}' en un dominio no oficial.", 35)
 
     # Atenuador de confianza Tranco si hubo factores leves no críticos
     if is_trusted and factors:

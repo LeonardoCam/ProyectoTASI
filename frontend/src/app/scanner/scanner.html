@@ -19,6 +19,22 @@
     </button>
   </div>
 
+  <div class="quick-examples">
+    <span class="examples-label">Ejemplos de prueba:</span>
+    <button type="button" class="chip chip-safe" (click)="loadExample('https://upch.edu.pe')" [disabled]="isLoading">
+      🟢 UPCH (Seguro)
+    </button>
+    <button type="button" class="chip chip-safe" (click)="loadExample('https://github.com/login')" [disabled]="isLoading">
+      🟢 GitHub Login (Atenuado)
+    </button>
+    <button type="button" class="chip chip-safe" (click)="loadExample('https://bcpzonasegura.viabcp.com')" [disabled]="isLoading">
+      🟢 BCP Oficial
+    </button>
+    <button type="button" class="chip chip-danger" (click)="loadExample('https://netfflix-verify.com')" [disabled]="isLoading">
+      🔴 Suplantación Marca
+    </button>
+  </div>
+
   @if (errorMessage) {
     <div class="error-alert" role="alert">{{ errorMessage }}</div>
   }
@@ -39,6 +55,24 @@
 
       <div class="details">
         <p class="recommendation">{{ recommendation(r.risk_level) }}</p>
+
+        <div class="action-bar">
+          <button type="button" class="btn-action" (click)="copyForensicReport(r)">
+            {{ copiedReport ? '✅ ¡Reporte Forense Copiado!' : '📋 Copiar Reporte Forense' }}
+          </button>
+          <div class="feedback-group">
+            <span class="feedback-label">¿Veredicto acertado?</span>
+            <button type="button" class="btn-fb" (click)="sendFeedback('ok')" [disabled]="feedbackSent" title="El resultado fue correcto">
+              👍 Sí
+            </button>
+            <button type="button" class="btn-fb" (click)="sendFeedback('fp')" [disabled]="feedbackSent" title="Reportar falso positivo">
+              ⚠️ Reportar
+            </button>
+            @if (feedbackMsg) {
+              <span class="feedback-toast">{{ feedbackMsg }}</span>
+            }
+          </div>
+        </div>
 
         @if (r.factors.length) {
           <div class="section">
@@ -61,6 +95,9 @@
               <a [href]="r.final_url" target="_blank" rel="noopener noreferrer nofollow">{{ r.final_url }}</a>
             }
           </p>
+          @if (r.page_title) {
+            <p><strong>Título web:</strong> <em>"{{ r.page_title }}"</em></p>
+          }
           <p>
             <strong>Dominio:</strong> {{ r.domain }}
             @if (!r.domain_exists) {
