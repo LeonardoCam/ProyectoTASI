@@ -16,7 +16,9 @@ class TTLCache:
 
     def get(self, key: str) -> Optional[Any]:
         item = self._data.get(key)
-        if item is None or item[0] < time.monotonic():
+        # "<=": en Windows time.monotonic() avanza a saltos de ~15 ms; con "<" una entrada con TTL 0
+        # podía seguir viva justo después de crearse (y la prueba test_expiry fallaba a veces).
+        if item is None or item[0] <= time.monotonic():
             self._data.pop(key, None)
             self.misses += 1
             return None
@@ -29,6 +31,17 @@ class TTLCache:
         self._data.move_to_end(key)
         while len(self._data) > self.max_entries:
             self._data.popitem(last=False)
+
+    def remaining(self, key: str) -> Optional[float]:
+        """Segundos que le quedan a la entrada antes de caducar (None si no existe o ya caducó)."""
+        item = self._data.get(key)
+        if item is None:
+            return None
+        left = item[0] - time.monotonic()
+        return left if left > 0 else None
+
+    def delete(self, key: str) -> None:
+        self._data.pop(key, None)
 
     def clear(self) -> None:
         self._data.clear()

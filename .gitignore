@@ -14,3 +14,8 @@ frontend/.angular/
 # Archivos del sistema operativo y editores
 .vscode/
 .DS_Store
+# Dataset de Kaggle (45 MB): se descarga con python -m eval.kaggle_eval --download
+eval/data/
+
+# Listas de amenazas descargadas en tiempo de ejecución (app/threat_intel.py)
+data/

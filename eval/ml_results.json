@@ -1,0 +1,77 @@
+{
+  "dataset": "malicious_phish.csv",
+  "reproduccion": {
+    "modelo": "RandomForest(100)",
+    "accuracy_test": 0.9768,
+    "auc_test": 0.9954,
+    "importancias_top": [
+      [
+        "count_http",
+        0.264
+      ],
+      [
+        "count_www",
+        0.1785
+      ],
+      [
+        "count_dir",
+        0.1163
+      ],
+      [
+        "count_dot",
+        0.0776
+      ],
+      [
+        "url_length",
+        0.0616
+      ],
+      [
+        "hostname_length",
+        0.0471
+      ],
+      [
+        "count_letters",
+        0.0424
+      ],
+      [
+        "tld_length",
+        0.035
+      ]
+    ]
+  },
+  "solo_esquema_accuracy": 0.8628,
+  "honesto_kaggle": {
+    "modelo": "HistGradientBoosting",
+    "accuracy_test": 0.8719,
+    "auc_test": 0.9393
+  },
+  "externo_2026": {
+    "n_maliciosas": 5000,
+    "n_legitimas": 5000,
+    "rf_notebook": {
+      "auc": 0.263,
+      "recall_fpr_1pct": 0.0164,
+      "recall_fpr_5pct": 0.0418
+    },
+    "ml_honesto": {
+      "auc": 0.2677,
+      "recall_fpr_1pct": 0.0104,
+      "recall_fpr_5pct": 0.0866
+    },
+    "heuristica_proyecto": {
+      "auc": 0.7639,
+      "recall_fpr_1pct": 0.3008,
+      "recall_fpr_5pct": 0.5376
+    },
+    "ml_honesto+heuristica": {
+      "auc": 0.7219,
+      "recall_fpr_1pct": 0.3524,
+      "recall_fpr_5pct": 0.5774
+    }
+  },
+  "umbrales_honesto": {
+    "fpr_1pct": 0.9994,
+    "fpr_5pct": 0.9951
+  },
+  "segundos": 281.5
+}

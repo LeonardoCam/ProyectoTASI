@@ -4,9 +4,13 @@
 
   <div class="search-box">
     <input
-      type="url"
+      type="text"
+      inputmode="url"
+      autocapitalize="off"
+      autocomplete="off"
+      spellcheck="false"
       [(ngModel)]="inputUrl"
-      placeholder="Ingresa la URL acortada (ej. https://bit.ly/...)"
+      placeholder="Pega el enlace (ej. bit.ly/abc, www.sitio.com o https://...)"
       (keyup.enter)="analyzeUrl()"
       aria-label="URL a analizar"
     />
@@ -57,16 +61,36 @@
               <a [href]="r.final_url" target="_blank" rel="noopener noreferrer nofollow">{{ r.final_url }}</a>
             }
           </p>
-          <p><strong>Dominio:</strong> {{ r.domain }}</p>
+          <p>
+            <strong>Dominio:</strong> {{ r.domain }}
+            @if (!r.domain_exists) {
+              <em class="muted">(no existe actualmente: se analizó sin visitarlo)</em>
+            } @else if (!r.reachable) {
+              <em class="muted">(el sitio no respondió: se analizó sin visitarlo)</em>
+            }
+          </p>
+          @if (r.dns_note && r.domain_exists && r.reachable) {
+            <p class="muted">{{ r.dns_note }}</p>
+          }
           <p>
             <strong>Antigüedad:</strong>
             {{ r.domain_age_days !== null ? r.domain_age_days + ' días' : 'No disponible (WHOIS protegido)' }}
           </p>
           <p><strong>Protocolo:</strong> {{ r.https ? 'HTTPS' : 'HTTP (sin cifrar)' }}</p>
           <p>
-            <strong>Reputación externa:</strong>
-            {{ r.reputation_checked ? 'Consultada, sin coincidencias' : 'No consultada' }}
+            <strong>Google Safe Browsing:</strong>
+            {{ !r.reputation_checked ? 'No configurado' : hasFactor(r, 'reputation') ? 'Reportado como peligroso' : 'Sin coincidencias' }}
           </p>
+          <p><strong>Listas de malware/phishing:</strong> {{ threatText(r) }}</p>
+          @if (r.threat_intel.virustotal; as vt) {
+            <p>
+              <strong>VirusTotal:</strong> {{ vt.malicious }} de {{ vt.engines }} antivirus lo marcan como malicioso ·
+              <a [href]="vt.link" target="_blank" rel="noopener noreferrer">ver informe</a>
+            </p>
+          }
+          @if (!r.threat_intel.destination_visited) {
+            <p class="muted">Por seguridad no se visitó el enlace: ya estaba reportado como peligroso.</p>
+          }
         </div>
 
         <div class="section">
@@ -79,9 +103,47 @@
         </div>
 
         <p class="meta">
-          {{ r.cached ? 'Resultado desde memoria (caché)' : 'Análisis nuevo' }} · {{ r.elapsed_ms }} ms
+          {{ r.cached ? 'Resultado guardado (caché)' : 'Análisis nuevo' }} · {{ r.elapsed_ms }} ms ·
+          analizado a las {{ r.analyzed_at | date: 'HH:mm' }} · se vuelve a analizar en {{ minutes(r.cache_expires_in_s) }}
         </p>
       </div>
     </div>
+  }
+
+  @if (history.length) {
+    <section class="history" aria-label="Historial de búsquedas">
+      <div class="history-head">
+        <h3>Historial de búsquedas</h3>
+        <button type="button" class="link-btn" (click)="clearHistory()">Borrar</button>
+      </div>
+      <p class="muted">Solo en este navegador; se borra al recargar la página. Toca uno para volver a analizarlo.</p>
+      <ul class="history-list">
+        @for (h of history; track h.url) {
+          <li>
+            <button type="button" class="history-item" (click)="reanalyze(h)" [disabled]="isLoading"
+                    [attr.aria-label]="'Volver a analizar ' + h.url">
+              <span class="h-score" [style.color]="h.level ? getRiskColor(h.level) : '#6b7280'">
+                {{ h.score !== null ? h.score + '%' : '—' }}
+              </span>
+              <span class="h-body">
+                <span class="h-url">{{ h.url }}</span>
+                <span class="h-bar" aria-hidden="true">
+                  <span class="h-fill" [style.width.%]="h.score ?? 0"
+                        [style.backgroundColor]="h.level ? getRiskColor(h.level) : 'transparent'"></span>
+                </span>
+                <span class="h-meta">
+                  @if (h.error) {
+                    Error: {{ h.error }}
+                  } @else {
+                    Riesgo {{ h.level }}{{ h.finalUrl && h.finalUrl !== h.url ? ' · → ' + h.finalUrl : '' }}
+                  }
+                  · {{ h.at | date: 'HH:mm:ss' }}{{ h.cached ? ' · caché' : '' }}
+                </span>
+              </span>
+            </button>
+          </li>
+        }
+      </ul>
+    </section>
   }
 </div>

@@ -1,0 +1,753 @@
+{
+  "dataset": "https://www.kaggle.com/api/v1/datasets/download/sid321axn/malicious-urls-dataset",
+  "umbral_medio": 30,
+  "filas": 651191,
+  "whois_ok": {
+    "n": {
+      "phishing": 94094,
+      "benign": 428103,
+      "defacement": 96457,
+      "malware": 32520
+    },
+    "fpr_benign": 0.0172,
+    "fpr_benign_sin_no_https": 0.0171,
+    "alta_confianza": {
+      "fpr_benignas_limpias": 0.0061,
+      "recall_phishing_con_esquema": 0.0781,
+      "auc": 0.766,
+      "n_benignas_limpias": 417841,
+      "n_phishing_con_esquema": 24852
+    },
+    "fn_phishing_con_esquema_ejemplos": [
+      {
+        "url": "http://ama-rs.acimovic.info/templates/beez/sample.htm",
+        "score": 0,
+        "factors": []
+      },
+      {
+        "url": "http://ytxx.myxw.cn/images/?http://us.battle.net/login/en/?ref=http://ztpddguus.battle.net/d3/en/index&app=com-d3",
+        "score": 5,
+        "factors": [
+          "keywords"
+        ]
+      },
+      {
+        "url": "http://www.xhrn.cn/images/?http://us.battle.net/login/en/?ref=http%3A%2F%2Fus.battle.net%2Fd3%2Fen%2Findex&amp;app=com-d3",
+        "score": 5,
+        "factors": [
+          "keywords"
+        ]
+      },
+      {
+        "url": "http://pastehtml.com/view/boyg3vzv1.html",
+        "score": 10,
+        "factors": [
+          "free_hosting"
+        ]
+      },
+      {
+        "url": "http://www.usamuaythai.com/wp-includes/kisito/c56fcabf586079d94433cd8eec646e2e/redirection.html",
+        "score": 20,
+        "factors": [
+          "cms_path",
+          "hash_dir"
+        ]
+      },
+      {
+        "url": "http://skat-xpikrbky.pepespizza.com/skat.dk/",
+        "score": 0,
+        "factors": []
+      },
+      {
+        "url": "http://www.redirectalink.com/blog/wp-content/plugins/Official%20Apple%20Store%20Assistance/a9e8d1f06fb16ff06689e0a6200e1662/",
+        "score": 20,
+        "factors": [
+          "cms_path",
+          "hash_dir"
+        ]
+      },
+      {
+        "url": "http://pastehtml.com/view/bb8kfftwi.html",
+        "score": 10,
+        "factors": [
+          "free_hosting"
+        ]
+      },
+      {
+        "url": "http://savageranch.com/portal/bnzonlineaccess/accountupdate/IBlogin2FA1,5599,,00.html",
+        "score": 0,
+        "factors": []
+      },
+      {
+        "url": "http://pastehtml.com/view/bfwnnzvid.html",
+        "score": 10,
+        "factors": [
+          "free_hosting"
+        ]
+      },
+      {
+        "url": "http://usaa.com-secure-ent-ac-rg-sec-min-agi.hfeconsulting.com/",
+        "score": 25,
+        "factors": [
+          "fake_domain_prefix",
+          "keywords"
+        ]
+      },
+      {
+        "url": "http://itarchitects.ca//Sql/Atualizacao/OnlineBradesco/Acesso_Cliente/add.php",
+        "score": 0,
+        "factors": []
+      },
+      {
+        "url": "http://rs.llweb.asia/m=weblogin/index.htm",
+        "score": 0,
+        "factors": []
+      },
+      {
+        "url": "http://us.battle.net.en.eeweb.asia/login/en/login.html?app=wam&amp;ref=https://www.battle.net/account/&amp;eor=0&amp;app=bam",
+        "score": 25,
+        "factors": [
+          "fake_domain_prefix",
+          "keywords",
+          "subdomains"
+        ]
+      },
+      {
+        "url": "http://pastehtml.com/view/bfn6k81u8.html",
+        "score": 10,
+        "factors": [
+          "free_hosting"
+        ]
+      }
+    ],
+    "fp_que_son_kits_phishing_mal_etiquetados": 4800,
+    "fpr_benign_sin_no_https_ni_ruido": 0.0059,
+    "deteccion": {
+      "phishing": 0.0653,
+      "defacement": 0.0001,
+      "malware": 0.3766
+    },
+    "deteccion_sin_no_https": {
+      "phishing": 0.032,
+      "defacement": 0.0001,
+      "malware": 0.006
+    },
+    "deteccion_maliciosas_total_sin_no_https": 0.0144,
+    "tasa_factor_por_clase": {
+      "at_sign": {
+        "benign": 0.0,
+        "phishing": 0.0001,
+        "defacement": 0.0,
+        "malware": 0.0001
+      },
+      "bad_tld": {
+        "benign": 0.0016,
+        "phishing": 0.0245,
+        "defacement": 0.0,
+        "malware": 0.0079
+      },
+      "brand_impersonation": {
+        "benign": 0.0113,
+        "phishing": 0.0246,
+        "defacement": 0.0001,
+        "malware": 0.005
+      },
+      "brand_in_path": {
+        "benign": 0.0168,
+        "phishing": 0.0248,
+        "defacement": 0.001,
+        "malware": 0.0021
+      },
+      "cms_path": {
+        "benign": 0.0171,
+        "phishing": 0.0429,
+        "defacement": 0.0022,
+        "malware": 0.029
+      },
+      "domain_in_path": {
+        "benign": 0.0044,
+        "phishing": 0.0044,
+        "defacement": 0.0001,
+        "malware": 0.0
+      },
+      "fake_domain_prefix": {
+        "benign": 0.0118,
+        "phishing": 0.0159,
+        "defacement": 0.0,
+        "malware": 0.0122
+      },
+      "free_hosting": {
+        "benign": 0.0055,
+        "phishing": 0.059,
+        "defacement": 0.0,
+        "malware": 0.0023
+      },
+      "hash_dir": {
+        "benign": 0.0134,
+        "phishing": 0.0226,
+        "defacement": 0.0,
+        "malware": 0.0029
+      },
+      "ip_host": {
+        "benign": 0.0001,
+        "phishing": 0.0035,
+        "defacement": 0.0,
+        "malware": 0.3619
+      },
+      "keywords": {
+        "benign": 0.0495,
+        "phishing": 0.078,
+        "defacement": 0.0044,
+        "malware": 0.0051
+      },
+      "nested_shortener": {
+        "benign": 0.0009,
+        "phishing": 0.0019,
+        "defacement": 0.0,
+        "malware": 0.0
+      },
+      "no_https": {
+        "benign": 0.0781,
+        "phishing": 0.1901,
+        "defacement": 1.0,
+        "malware": 0.7548
+      },
+      "punycode": {
+        "benign": 0.0001,
+        "phishing": 0.0009,
+        "defacement": 0.0,
+        "malware": 0.0002
+      },
+      "subdomains": {
+        "benign": 0.0176,
+        "phishing": 0.0304,
+        "defacement": 0.0,
+        "malware": 0.0067
+      },
+      "typosquatting": {
+        "benign": 0.0004,
+        "phishing": 0.0015,
+        "defacement": 0.0,
+        "malware": 0.0001
+      }
+    },
+    "factores_en_falsos_positivos": {
+      "subdomains": 1680,
+      "keywords": 1514,
+      "fake_domain_prefix": 1184,
+      "brand_impersonation": 1156,
+      "hash_dir": 323,
+      "brand_in_path": 228,
+      "bad_tld": 137,
+      "cms_path": 123,
+      "domain_in_path": 111,
+      "typosquatting": 81,
+      "free_hosting": 10,
+      "punycode": 5
+    },
+    "ejemplos_falsos_positivos": [
+      {
+        "url": "hotmasil.com.hypestat.com/",
+        "score": 45,
+        "factors": [
+          "fake_domain_prefix",
+          "typosquatting"
+        ]
+      },
+      {
+        "url": "yahoo.brand.edgar-online.com/PeopleFilingResults.aspx?PersonID=2742859&PersonName=TED%20CONNOLLY",
+        "score": 30,
+        "factors": [
+          "brand_impersonation"
+        ]
+      },
+      {
+        "url": "yahoo.brand.edgar-online.com/People.aspx?ticker=CNTM",
+        "score": 30,
+        "factors": [
+          "brand_impersonation"
+        ]
+      },
+      {
+        "url": "netflix.mediaroom.com/index.php?s=43&item=379",
+        "score": 30,
+        "factors": [
+          "brand_impersonation"
+        ]
+      },
+      {
+        "url": "factbook.org/wikipedia/en/c/ch/chihuahua__state_.html",
+        "score": 30,
+        "factors": [
+          "typosquatting"
+        ]
+      },
+      {
+        "url": "yahoo.ask.com/",
+        "score": 30,
+        "factors": [
+          "brand_impersonation"
+        ]
+      },
+      {
+        "url": "yahoo.brand.edgar-online.com/People.aspx?ticker=SPMI",
+        "score": 30,
+        "factors": [
+          "brand_impersonation"
+        ]
+      },
+      {
+        "url": "yahoo.brand.edgar-online.com/PeopleFilingResults.aspx?PersonID=1969667&PersonName=SAUNDRA%20BROWN%20ARMSTRONG",
+        "score": 30,
+        "factors": [
+          "brand_impersonation"
+        ]
+      },
+      {
+        "url": "yahoo.brand.edgar-online.com/DisplayFilingInfo.aspx?Type=HTML&text=%2526lt%253bNEAR%252f4%2526gt%253b(%22KEVIN%22%2c%22COOK%22)&FilingID=2509597&ppu=%2fPeopleFilingResults.aspx%3fPersonID%3d2578745%26PersonName%3dKEVIN%2520COOK",
+        "score": 30,
+        "factors": [
+          "brand_impersonation"
+        ]
+      },
+      {
+        "url": "apple-macbook-air-buy-reviews.info/antagony-design-protector-skin-decal-sticker-for-apple-macbook-air-13-multi-touch-wsd-card-slot-release-fall-2010/",
+        "score": 40,
+        "factors": [
+          "brand_impersonation",
+          "brand_in_path"
+        ]
+      },
+      {
+        "url": "yahoo-radio.software.informer.com/",
+        "score": 30,
+        "factors": [
+          "brand_impersonation"
+        ]
+      },
+      {
+        "url": "i-google-map.com/europe-map/slovenia-map/",
+        "score": 30,
+        "factors": [
+          "brand_impersonation"
+        ]
+      },
+      {
+        "url": "bankofamericaarenaticket.com/",
+        "score": 30,
+        "factors": [
+          "brand_impersonation"
+        ]
+      },
+      {
+        "url": "yahoo.brand.edgar-online.com/DisplayFilingInfo.aspx?Type=HTML&text=%2526lt%253bNEAR%252f4%2526gt%253b(%22J.+CRAIG%22%2c%22BAKER%22)&FilingID=942595&ppu=%2fPeopleFilingResults.aspx%3fPersonID%3d2682633%26PersonName%3dJ.%2520CRAIG%2520BAKER",
+        "score": 30,
+        "factors": [
+          "brand_impersonation"
+        ]
+      },
+      {
+        "url": "yahoo.rogers.com/yahoo/answerman/pf_index.jsp?id=am060510",
+        "score": 40,
+        "factors": [
+          "brand_impersonation",
+          "brand_in_path"
+        ]
+      }
+    ]
+  },
+  "whois_none": {
+    "n": {
+      "phishing": 94094,
+      "benign": 428103,
+      "defacement": 96457,
+      "malware": 32520
+    },
+    "fpr_benign": 0.0294,
+    "fpr_benign_sin_no_https": 0.025,
+    "alta_confianza": {
+      "fpr_benignas_limpias": 0.0122,
+      "recall_phishing_con_esquema": 0.1639,
+      "auc": 0.7706,
+      "n_benignas_limpias": 417841,
+      "n_phishing_con_esquema": 24852
+    },
+    "fn_phishing_con_esquema_ejemplos": [
+      {
+        "url": "http://www.saxco.co/dir/OnlinefraudService/ID324=Check/",
+        "score": 10,
+        "factors": [
+          "age_unknown"
+        ]
+      },
+      {
+        "url": "http://www.kingsportclub.com/js/?app=com-d3&http://us.battle.net/login/en/?ref=http://us.battle.net/d3/en/index",
+        "score": 15,
+        "factors": [
+          "age_unknown",
+          "keywords"
+        ]
+      },
+      {
+        "url": "http://viewmygooglesyncpicture.pythonanywhere.com/",
+        "score": 10,
+        "factors": [
+          "age_unknown"
+        ]
+      },
+      {
+        "url": "http://www.yeuemnhieulam.com/viaclonebangtoken5/quan1/",
+        "score": 10,
+        "factors": [
+          "age_unknown"
+        ]
+      },
+      {
+        "url": "http://www.superjettravels.com/css/chaser/chaser/chase/auth/",
+        "score": 10,
+        "factors": [
+          "age_unknown"
+        ]
+      },
+      {
+        "url": "http://milah.org/wp-admin/includes/NewB2B/NewB2B/NewB2B/NewB2B/NewB2B/New B2B/New B2B/index.htm",
+        "score": 20,
+        "factors": [
+          "age_unknown",
+          "cms_path"
+        ]
+      },
+      {
+        "url": "http://www.systangostudios.com/systangostudios/support/validation/validation/validate/napplic2Faccount/10cbd317f1bbda2baf2fe979b44c4716/",
+        "score": 25,
+        "factors": [
+          "age_unknown",
+          "hash_dir",
+          "keywords"
+        ]
+      },
+      {
+        "url": "http://webirodahaz.hu/pic/yahoo/mail.html",
+        "score": 20,
+        "factors": [
+          "age_unknown",
+          "brand_in_path"
+        ]
+      },
+      {
+        "url": "http://pastehtml.com/view/bagnxdhp9.html",
+        "score": 20,
+        "factors": [
+          "age_unknown",
+          "free_hosting"
+        ]
+      },
+      {
+        "url": "http://www.id8-eu.co.uk/identify-customer=C6CsUN8u5ANtjPQSD4WuNjaDXUwPHqhw7aUqAV5pwOBPuJtxHklmtBTDp42gMYiDwQHMGLEAwDzRwFKE0hBGPR2EhHObtDuoKR1o/",
+        "score": 10,
+        "factors": [
+          "age_unknown"
+        ]
+      },
+      {
+        "url": "http://www.123660.com/img/index.htm?http://us.battle.net/login/en/?ref=http://us.battle.net/d3/en/index",
+        "score": 15,
+        "factors": [
+          "age_unknown",
+          "keywords"
+        ]
+      },
+      {
+        "url": "http://www.bjzjg.com/js/?app=com-d3&us.battle.net/login/en/?ref=http://wwqdbxeus.battle.net/d3/en/index",
+        "score": 15,
+        "factors": [
+          "age_unknown",
+          "keywords"
+        ]
+      },
+      {
+        "url": "http://www.political-voice.co.uk/script.php",
+        "score": 10,
+        "factors": [
+          "age_unknown"
+        ]
+      },
+      {
+        "url": "http://www.ssaintander15-registrosj.com/",
+        "score": 10,
+        "factors": [
+          "age_unknown"
+        ]
+      },
+      {
+        "url": "http://www.rcbl.ca/teampics/premiado/cadastrar.html?b2c/vgn/v/index.jsp?vgnextoid=97981ed526b72210VgnVCM1000003752070aRCRD",
+        "score": 10,
+        "factors": [
+          "age_unknown"
+        ]
+      }
+    ],
+    "fp_que_son_kits_phishing_mal_etiquetados": 5589,
+    "fpr_benign_sin_no_https_ni_ruido": 0.0119,
+    "deteccion": {
+      "phishing": 0.1413,
+      "defacement": 0.0077,
+      "malware": 0.4128
+    },
+    "deteccion_sin_no_https": {
+      "phishing": 0.0589,
+      "defacement": 0.0001,
+      "malware": 0.3696
+    },
+    "deteccion_maliciosas_total_sin_no_https": 0.0788,
+    "tasa_factor_por_clase": {
+      "age_unknown": {
+        "benign": 0.9744,
+        "phishing": 0.9534,
+        "defacement": 0.9972,
+        "malware": 0.9999
+      },
+      "at_sign": {
+        "benign": 0.0,
+        "phishing": 0.0001,
+        "defacement": 0.0,
+        "malware": 0.0001
+      },
+      "bad_tld": {
+        "benign": 0.0016,
+        "phishing": 0.0245,
+        "defacement": 0.0,
+        "malware": 0.0079
+      },
+      "brand_impersonation": {
+        "benign": 0.0113,
+        "phishing": 0.0246,
+        "defacement": 0.0001,
+        "malware": 0.005
+      },
+      "brand_in_path": {
+        "benign": 0.0168,
+        "phishing": 0.0248,
+        "defacement": 0.001,
+        "malware": 0.0021
+      },
+      "cms_path": {
+        "benign": 0.0171,
+        "phishing": 0.0429,
+        "defacement": 0.0022,
+        "malware": 0.029
+      },
+      "domain_in_path": {
+        "benign": 0.0044,
+        "phishing": 0.0044,
+        "defacement": 0.0001,
+        "malware": 0.0
+      },
+      "fake_domain_prefix": {
+        "benign": 0.0118,
+        "phishing": 0.0159,
+        "defacement": 0.0,
+        "malware": 0.0122
+      },
+      "free_hosting": {
+        "benign": 0.0055,
+        "phishing": 0.059,
+        "defacement": 0.0,
+        "malware": 0.0023
+      },
+      "hash_dir": {
+        "benign": 0.0134,
+        "phishing": 0.0226,
+        "defacement": 0.0,
+        "malware": 0.0029
+      },
+      "ip_host": {
+        "benign": 0.0001,
+        "phishing": 0.0035,
+        "defacement": 0.0,
+        "malware": 0.3619
+      },
+      "keywords": {
+        "benign": 0.0495,
+        "phishing": 0.078,
+        "defacement": 0.0044,
+        "malware": 0.0051
+      },
+      "nested_shortener": {
+        "benign": 0.0009,
+        "phishing": 0.0019,
+        "defacement": 0.0,
+        "malware": 0.0
+      },
+      "no_https": {
+        "benign": 0.0781,
+        "phishing": 0.1901,
+        "defacement": 1.0,
+        "malware": 0.7548
+      },
+      "punycode": {
+        "benign": 0.0001,
+        "phishing": 0.0009,
+        "defacement": 0.0,
+        "malware": 0.0002
+      },
+      "subdomains": {
+        "benign": 0.0176,
+        "phishing": 0.0304,
+        "defacement": 0.0,
+        "malware": 0.0067
+      },
+      "typosquatting": {
+        "benign": 0.0004,
+        "phishing": 0.0015,
+        "defacement": 0.0,
+        "malware": 0.0001
+      }
+    },
+    "factores_en_falsos_positivos": {
+      "age_unknown": 5114,
+      "keywords": 2738,
+      "subdomains": 2416,
+      "fake_domain_prefix": 1947,
+      "brand_in_path": 1611,
+      "brand_impersonation": 1156,
+      "hash_dir": 1120,
+      "cms_path": 775,
+      "domain_in_path": 577,
+      "bad_tld": 199,
+      "typosquatting": 81,
+      "free_hosting": 46,
+      "ip_host": 26,
+      "punycode": 15
+    },
+    "ejemplos_falsos_positivos": [
+      {
+        "url": "hotmasil.com.hypestat.com/",
+        "score": 55,
+        "factors": [
+          "age_unknown",
+          "fake_domain_prefix",
+          "typosquatting"
+        ]
+      },
+      {
+        "url": "216.92.161.171/vb/printthread.php?t=8432&pp=40&page=2",
+        "score": 35,
+        "factors": [
+          "age_unknown",
+          "ip_host"
+        ]
+      },
+      {
+        "url": "77.170.120.22/ex-baba/engels/comments_on/_the_secret_swami/tigrett.htm",
+        "score": 35,
+        "factors": [
+          "age_unknown",
+          "ip_host"
+        ]
+      },
+      {
+        "url": "199.115.25.156/aqueduct/Stakes/HollieHughes.shtml",
+        "score": 35,
+        "factors": [
+          "age_unknown",
+          "ip_host"
+        ]
+      },
+      {
+        "url": "http://filehippo.com/fr/download_google_chrome/download/534c8eb6a3f3f6253cb20dc4eaec0aa7/",
+        "score": 30,
+        "factors": [
+          "age_unknown",
+          "brand_in_path",
+          "hash_dir"
+        ]
+      },
+      {
+        "url": "chazzcreations.com.p8.hostingprod.com/thomasshawrimes_family_history/dekle_family_history",
+        "score": 30,
+        "factors": [
+          "age_unknown",
+          "fake_domain_prefix",
+          "subdomains"
+        ]
+      },
+      {
+        "url": "yahoo.brand.edgar-online.com/PeopleFilingResults.aspx?PersonID=2742859&PersonName=TED%20CONNOLLY",
+        "score": 40,
+        "factors": [
+          "age_unknown",
+          "brand_impersonation"
+        ]
+      },
+      {
+        "url": "yahoo.brand.edgar-online.com/People.aspx?ticker=CNTM",
+        "score": 40,
+        "factors": [
+          "age_unknown",
+          "brand_impersonation"
+        ]
+      },
+      {
+        "url": "netflix.mediaroom.com/index.php?s=43&item=379",
+        "score": 40,
+        "factors": [
+          "age_unknown",
+          "brand_impersonation"
+        ]
+      },
+      {
+        "url": "factbook.org/wikipedia/en/c/ch/chihuahua__state_.html",
+        "score": 40,
+        "factors": [
+          "age_unknown",
+          "typosquatting"
+        ]
+      },
+      {
+        "url": "198.164.154.3/~Heritage/RCN/SJ_Built_Frigates.htm",
+        "score": 35,
+        "factors": [
+          "age_unknown",
+          "ip_host"
+        ]
+      },
+      {
+        "url": "http://filehippo.com/download_google_chrome/download/dae4c9eec6ce44ee4c9dbe038f0dd6d0/",
+        "score": 30,
+        "factors": [
+          "age_unknown",
+          "brand_in_path",
+          "hash_dir"
+        ]
+      },
+      {
+        "url": "psats.org.s97340.gridserver.com/subpage.php?pageid=searchalphabetically",
+        "score": 30,
+        "factors": [
+          "age_unknown",
+          "fake_domain_prefix",
+          "subdomains"
+        ]
+      },
+      {
+        "url": "98.127.224.134/purecountry/",
+        "score": 35,
+        "factors": [
+          "age_unknown",
+          "ip_host"
+        ]
+      },
+      {
+        "url": "http://filehippo.com/pl/download_google_chrome/download/534c8eb6a3f3f6253cb20dc4eaec0aa7/",
+        "score": 30,
+        "factors": [
+          "age_unknown",
+          "brand_in_path",
+          "hash_dir"
+        ]
+      }
+    ]
+  },
+  "segundos": 120.4
+}

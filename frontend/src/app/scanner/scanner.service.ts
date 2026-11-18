@@ -10,6 +10,7 @@ export interface RiskFactor {
 }
 
 export interface ScanResponse {
+  input_url: string;
   original_url: string;
   final_url: string;
   redirect_chain: string[];
@@ -18,11 +19,22 @@ export interface ScanResponse {
   domain: string;
   registered_domain: string;
   domain_age_days: number | null;
+  domain_exists: boolean;
+  reachable: boolean;
+  dns_note: string | null;
   reputation_checked: boolean;
   risk_score: number;
   risk_level: 'BAJO' | 'MEDIO' | 'ALTO';
   factors: RiskFactor[];
+  threat_intel: {
+    destination_visited: boolean;
+    lists_loaded: number;
+    matches: { source: string; category: 'malware' | 'phishing'; matched: string }[];
+    virustotal: { malicious: number; suspicious: number; engines: number; link: string } | null;
+  };
   cached: boolean;
+  analyzed_at: string;
+  cache_expires_in_s: number;
   elapsed_ms: number;
 }
 
