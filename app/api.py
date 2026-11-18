@@ -13,7 +13,7 @@ from typing import Optional
 
 from . import config, domain_info, heuristics, ml_model, reputation, resolver, threat_intel
 from .cache import TTLCache
-from .normalize import normalize_url
+from .normalize import defang_url, normalize_url
 from .ratelimit import RateLimiter
 from .security import UnsafeURLError, assert_safe_url
 
@@ -176,7 +176,8 @@ async def _expand(req: URLRequest, request: Request):
                       redirect_problem: Optional[str] = None,
                       page_title: Optional[str] = None,
                       security_headers: Optional[dict] = None,
-                      content_disposition: Optional[str] = None) -> dict:
+                      content_disposition: Optional[str] = None,
+                      chain_details: Optional[list[dict]] = None) -> dict:
         host = (urlsplit(final_url).hostname or "").lower()
         domain = heuristics.registrable_domain(host)
         tasks = [domain_info.domain_age_days(domain), reputation.is_flagged(final_url)]
@@ -200,11 +201,38 @@ async def _expand(req: URLRequest, request: Request):
             content_disposition=content_disposition,
             ml_result=ml_eval,
         )
+        u_parts = urlsplit(final_url)
+        u_ext = heuristics._extract(host)
+        url_components = {
+            "scheme": u_parts.scheme,
+            "subdomain": u_ext.subdomain or None,
+            "domain": u_ext.domain or None,
+            "tld": u_ext.suffix or None,
+            "registered_domain": domain,
+            "port": u_parts.port,
+            "path": u_parts.path or "/",
+            "query": u_parts.query or None,
+            "fragment": u_parts.fragment or None,
+        }
+        defanged = defang_url(final_url)
+        if not chain_details:
+            chain_details = [{
+                "hop": 1,
+                "url": final_url,
+                "status_code": 200,
+                "domain": host,
+                "https": final_url.startswith("https://"),
+                "cross_domain": False,
+            }]
+
         result = {
             "input_url": req.url.strip(),
             "original_url": url,
             "final_url": final_url,
+            "defanged_url": defanged,
             "redirect_chain": chain,
+            "chain_details": chain_details,
+            "url_components": url_components,
             "hops": hops,
             "https": final_url.startswith("https://"),
             "domain": host,
@@ -282,4 +310,5 @@ async def _expand(req: URLRequest, request: Request):
         exp.final_url, exp.chain, exp.hops, True, matches,
         page_title=exp.title, security_headers=exp.security_headers,
         content_disposition=exp.content_disposition,
+        chain_details=exp.chain_details,
     )

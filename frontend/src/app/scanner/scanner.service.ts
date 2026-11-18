@@ -13,7 +13,27 @@ export interface ScanResponse {
   input_url: string;
   original_url: string;
   final_url: string;
+  defanged_url?: string;
   redirect_chain: string[];
+  chain_details?: {
+    hop: number;
+    url: string;
+    status_code?: number;
+    domain: string;
+    https: boolean;
+    cross_domain: boolean;
+  }[];
+  url_components?: {
+    scheme: string;
+    subdomain: string | null;
+    domain: string | null;
+    tld: string | null;
+    registered_domain: string;
+    port: number | null;
+    path: string;
+    query: string | null;
+    fragment: string | null;
+  };
   hops: number;
   https: boolean;
   domain: string;

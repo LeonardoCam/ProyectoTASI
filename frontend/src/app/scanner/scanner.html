@@ -65,6 +65,9 @@
           <button type="button" class="btn-action" (click)="copyForensicReport(r)">
             {{ copiedReport ? '✅ ¡Reporte Forense Copiado!' : '📋 Copiar Reporte Forense' }}
           </button>
+          <button type="button" class="btn-action btn-defanged" (click)="copyDefangedUrl(r)" title="Copiar enlace sanitizado para reportes de seguridad">
+            {{ copiedDefanged ? '🛡️ ¡Defanged Copiado!' : '🛡️ Copiar Defanged' }}
+          </button>
           <div class="feedback-group">
             <span class="feedback-label">¿Veredicto acertado?</span>
             <button type="button" class="btn-fb" (click)="sendFeedback('ok')" [disabled]="feedbackSent" title="El resultado fue correcto">
@@ -159,13 +162,83 @@
           }
         </div>
 
+        @if (r.url_components) {
+          <div class="section anatomy-box">
+            <strong>Desglose Estructural de la URL (Anatomía):</strong>
+            <div class="anatomy-grid">
+              <div class="anat-item">
+                <span class="anat-lbl">Esquema:</span>
+                <code>{{ r.url_components.scheme }}://</code>
+              </div>
+              <div class="anat-item">
+                <span class="anat-lbl">Subdominio:</span>
+                <code>{{ r.url_components.subdomain || '—' }}</code>
+              </div>
+              <div class="anat-item">
+                <span class="anat-lbl">Dominio Registrable:</span>
+                <code class="anat-dom">{{ r.url_components.registered_domain }}</code>
+              </div>
+              <div class="anat-item">
+                <span class="anat-lbl">TLD:</span>
+                <code>.{{ r.url_components.tld || '—' }}</code>
+              </div>
+              <div class="anat-item">
+                <span class="anat-lbl">Ruta:</span>
+                <code>{{ r.url_components.path }}</code>
+              </div>
+              @if (r.url_components.query) {
+                <div class="anat-item">
+                  <span class="anat-lbl">Parámetros:</span>
+                  <code>?{{ r.url_components.query }}</code>
+                </div>
+              }
+              @if (r.defanged_url) {
+                <div class="anat-item anat-full">
+                  <span class="anat-lbl">Versión Sanitizada (Defanged):</span>
+                  <code class="anat-defanged">{{ r.defanged_url }}</code>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
         <div class="section">
-          <strong>Trazabilidad ({{ r.hops }} {{ r.hops === 1 ? 'salto' : 'saltos' }}):</strong>
-          <ol class="chain">
-            @for (step of r.redirect_chain; track $index) {
-              <li>{{ step }}</li>
-            }
-          </ol>
+          <strong>Línea de Tiempo de Redirección ({{ r.hops }} {{ r.hops === 1 ? 'salto' : 'saltos' }}):</strong>
+          @if (r.chain_details && r.chain_details.length) {
+            <div class="stepper-timeline">
+              @for (st of r.chain_details; track st.hop) {
+                <div class="step-card" [class.step-card-final]="$last">
+                  <div class="step-header">
+                    <span class="step-badge" [class.step-badge-final]="$last">
+                      {{ $last && r.hops > 0 ? '🏁 Destino' : 'Salto ' + st.hop }}
+                    </span>
+                    @if (st.status_code) {
+                      <span class="badge" [class.badge-ok]="st.status_code === 200"
+                                          [class.badge-warn]="st.status_code >= 300 && st.status_code < 400">
+                        HTTP {{ st.status_code }}
+                      </span>
+                    }
+                    <span class="badge" [class.badge-ok]="st.https" [class.badge-warn]="!st.https">
+                      {{ st.https ? 'HTTPS' : 'HTTP' }}
+                    </span>
+                    @if (st.cross_domain) {
+                      <span class="badge badge-danger">⚠️ Cruce de Dominio</span>
+                    }
+                  </div>
+                  <div class="step-body">
+                    <div class="step-domain">{{ st.domain }}</div>
+                    <code class="step-url">{{ st.url }}</code>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <ol class="chain">
+              @for (step of r.redirect_chain; track $index) {
+                <li>{{ step }}</li>
+              }
+            </ol>
+          }
         </div>
 
         <p class="meta">

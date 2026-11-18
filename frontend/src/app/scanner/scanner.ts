@@ -33,6 +33,7 @@ export class ScannerComponent implements OnInit {
   errorMessage = '';
   history: HistoryItem[] = [];
   copiedReport = false;
+  copiedDefanged = false;
   feedbackSent = false;
   feedbackMsg = '';
   isDarkTheme = false;
@@ -207,6 +208,18 @@ export class ScannerComponent implements OnInit {
       this.cdr.detectChanges();
       setTimeout(() => {
         this.copiedReport = false;
+        this.cdr.detectChanges();
+      }, 3000);
+    });
+  }
+
+  copyDefangedUrl(r: ScanResponse): void {
+    const text = r.defanged_url || r.final_url;
+    navigator.clipboard.writeText(text).then(() => {
+      this.copiedDefanged = true;
+      this.cdr.detectChanges();
+      setTimeout(() => {
+        this.copiedDefanged = false;
         this.cdr.detectChanges();
       }, 3000);
     });

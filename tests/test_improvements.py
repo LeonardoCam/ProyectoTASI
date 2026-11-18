@@ -160,3 +160,35 @@ def test_ml_does_not_interfere_with_tranco_or_threat_intel():
                                         threat_matches=[m], ml_result=mock_ml_high)
     assert "threat_intel" in ids(f_threat)
     assert score_threat >= 80
+
+
+def test_defang_url():
+    from app.normalize import defang_url
+    assert defang_url("https://phishing.bcp-portal.xyz/login") == "hxxps://phishing[.]bcp-portal[.]xyz/login"
+    assert defang_url("http://192.168.1.1:8080/test") == "hxxp://192[.]168[.]1[.]1:8080/test"
+
+
+def test_double_url_encoding_detection():
+    score, f = h.evaluate("https://sitio-trampa.com/path/%252e%252e/admin", hops=0, domain_age_days=200)
+    assert "double_url_encoding" in ids(f)
+
+
+def test_unicode_stealth_characters_detection():
+    # URL con espacio de ancho cero invisible (\u200b)
+    url_stealth = "https://bcp\u200b-seguro.com/login"
+    score, f = h.evaluate(url_stealth, hops=0, domain_age_days=200)
+    assert "unicode_stealth_chars" in ids(f)
+
+
+def test_obfuscated_numerical_ip_detection():
+    # Host con IP formato dword entero
+    score, f = h.evaluate("http://2130706433/login", hops=0, domain_age_days=None)
+    assert "obfuscated_ip" in ids(f)
+    assert score >= 35
+
+
+def test_open_redirect_parameter_detection():
+    # Parámetro abierto hacia un dominio externo sospechoso
+    url_open_red = "https://sitio-portal.com/login?redirect=https://evil-phish.xyz/harvest"
+    score, f = h.evaluate(url_open_red, hops=0, domain_age_days=200)
+    assert "open_redirect_param" in ids(f)

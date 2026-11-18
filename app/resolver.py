@@ -38,6 +38,7 @@ class UpstreamTimeout(UpstreamError):
 class Expansion:
     final_url: str
     chain: list[str] = field(default_factory=list)   # URLs visitadas, incluida la inicial y la final
+    chain_details: list[dict] = field(default_factory=list)  # Detalles técnicos por cada salto
     status_code: Optional[int] = None
     title: Optional[str] = None
     security_headers: dict[str, bool] = field(default_factory=dict)
@@ -64,6 +65,7 @@ async def expand(url: str, transport: Optional[httpx.AsyncBaseTransport] = None)
         "Accept": "text/html,application/xhtml+xml,*/*;q=0.8",
     }
     chain = [url]
+    chain_details = []
     seen = {url}
     current = url
 
@@ -92,11 +94,20 @@ async def expand(url: str, transport: Optional[httpx.AsyncBaseTransport] = None)
                 # incluye Location malformado o con punycode inválido (httpx lo valida al construir el salto)
                 raise UpstreamError("No se pudo conectar con el destino.")
 
+            cur_host = (httpx.URL(current).host or "").lower()
             if status in REDIRECT_CODES and location:
                 nxt = urljoin(current, location)
                 if nxt in seen:
                     raise RedirectLoopError("Bucle de redirección detectado.")
                 seen.add(nxt)
+                chain_details.append({
+                    "hop": len(chain_details) + 1,
+                    "url": current,
+                    "status_code": status,
+                    "domain": cur_host,
+                    "https": current.lower().startswith("https://"),
+                    "cross_domain": len(chain_details) > 0 and cur_host != chain_details[-1]["domain"],
+                })
                 chain.append(nxt)
                 current = nxt
                 continue
@@ -124,9 +135,20 @@ async def expand(url: str, transport: Optional[httpx.AsyncBaseTransport] = None)
             }
             cdisp = resp.headers.get("content-disposition")
 
+            cur_host = (httpx.URL(current).host or "").lower()
+            chain_details.append({
+                "hop": len(chain_details) + 1,
+                "url": current,
+                "status_code": status,
+                "domain": cur_host,
+                "https": current.lower().startswith("https://"),
+                "cross_domain": len(chain_details) > 0 and cur_host != chain_details[-1]["domain"],
+            })
+
             return Expansion(
                 final_url=current,
                 chain=chain,
+                chain_details=chain_details,
                 status_code=status,
                 title=title,
                 security_headers=sec_headers,

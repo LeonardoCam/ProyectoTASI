@@ -47,6 +47,43 @@ ACTION_WORDS = re.compile(
     r"confirmar|webscr|unlock|suspended|suspendida|recover|recovery|authenticate|wallet|billing)$"
 )
 
+# Parámetros sospechosos de redirección abierta en query strings de la URL
+OPEN_REDIRECT_PARAMS = {
+    "redirect", "redirect_url", "redirect_to", "url", "next", "dest", "destination",
+    "target", "return_to", "r", "link", "forward", "out", "view",
+}
+
+# Caracteres invisibles o de inversión de texto usados para evadir inspección y confundir al usuario
+UNICODE_STEALTH_CHARS = {
+    "\u200b", "\u200c", "\u200d", "\ufeff", "\u202e", "\u00ad", "\u200e", "\u200f",
+}
+
+# Doble codificación porcentual (ej. %252f, %253f) usada para evadir WAF y filtros de URL
+DOUBLE_ENCODING_RE = re.compile(r"%25[0-9a-fA-F]{2}")
+
+
+def _is_obfuscated_ip(host: str) -> bool:
+    """Detecta si el host es una dirección IP en formato numérico ofuscado (Dword, Hex u Octal)."""
+    h = host.strip()
+    if h.isdigit() and len(h) >= 8:
+        try:
+            val = int(h)
+            if 0 <= val <= 0xFFFFFFFF:
+                return True
+        except ValueError:
+            pass
+    if h.lower().startswith("0x"):
+        try:
+            val = int(h, 16)
+            if 0 <= val <= 0xFFFFFFFF:
+                return True
+        except ValueError:
+            pass
+    parts = h.split(".")
+    if len(parts) == 4 and any(p.startswith("0x") or (len(p) > 1 and p.startswith("0") and p.isdigit()) for p in parts):
+        return True
+    return False
+
 # Marcas suplantadas con frecuencia -> dominios registrables oficiales. La marca es señal de
 # riesgo solo si aparece en un dominio que NO es suyo (ej. "bcp-seguro.xyz", "paypal.com.evil.co").
 BRANDS: dict[str, set[str]] = {
@@ -336,8 +373,11 @@ def evaluate(
         is_ip = True
     except ValueError:
         pass
+    is_obf_ip = not is_ip and _is_obfuscated_ip(host)
     if is_ip:
         add("ip_host", "El destino usa una dirección IP en lugar de un nombre de dominio.", 25)
+    elif is_obf_ip:
+        add("obfuscated_ip", "El host de la URL utiliza una dirección IP en formato numérico ofuscado (Dword/Hex/Octal), empleado para evadir filtros de seguridad.", 35)
     else:
         if "xn--" in host:
             add("punycode", "El dominio usa punycode (posible suplantación con caracteres similares).", 15)
@@ -384,7 +424,7 @@ def evaluate(
     if "@" in (parts.netloc or ""):
         add("at_sign", "La URL contiene '@' antes del dominio, usado para disfrazar el dominio real.", 15)
 
-    if not is_ip:
+    if not is_ip and not is_obf_ip:
         sub_and_domain = _tokens(ext.subdomain) + _tokens(ext.domain)
         path_tokens = _tokens((parts.path or "") + " " + (parts.query or ""))
         host_actions = {t for t in sub_and_domain if ACTION_WORDS.match(t)}
@@ -429,6 +469,32 @@ def evaluate(
             if t_brand:
                 add("title_impersonation",
                     f"El título de la página ('{page_title[:60]}') contiene la marca '{t_brand}' en un dominio no oficial.", 35)
+
+        # Evasión por doble codificación en la URL (Double URL Encoding: %25..)
+        if DOUBLE_ENCODING_RE.search(final_url):
+            add("double_url_encoding",
+                "La URL contiene doble codificación porcentual (%25..), técnica empleada para evadir cortafuegos web (WAF) y filtros de inspección.", 20)
+
+        # Evasión por caracteres invisibles o de inversión de texto Unicode (Zero-Width / BiDi)
+        if any(c in final_url for c in UNICODE_STEALTH_CHARS):
+            add("unicode_stealth_chars",
+                "La URL contiene caracteres invisibles o de inversión de texto (Zero-Width/BiDi), utilizados para suplantación visual encubierta.", 35)
+
+        # Evasión por vector de redirección abierta en los parámetros de la URL (?redirect=, ?next=)
+        if parts.query and not is_trusted:
+            from urllib.parse import parse_qsl
+            for qk, qv in parse_qsl(parts.query, keep_blank_values=True):
+                if qk.lower() in OPEN_REDIRECT_PARAMS:
+                    qv_clean = qv.strip().lower()
+                    if qv_clean.startswith(("http://", "https://", "//")):
+                        try:
+                            qv_host = (urlsplit(qv if "://" in qv else "//" + qv).hostname or "").lower()
+                            if qv_host and qv_host != host and not host.endswith("." + qv_host):
+                                add("open_redirect_param",
+                                    f"La URL contiene un parámetro de redirección externa ({qk}={qv[:35]}...) hacia otro dominio, vector común de phishing por salto.", 15)
+                                break
+                        except Exception:
+                            pass
 
     # Capa 2: Calibración por Machine Learning (modelo honesto) en zona gris/ambigua
     if ml_result and ml_result.get("available") and not is_trusted:

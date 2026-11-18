@@ -48,7 +48,7 @@ Este sistema es una solución integral que:
 * **Backend:** Python 3.12+, FastAPI, Uvicorn, HTTPX (asíncrono con contexto TLS optimizado), DNS-over-HTTPS (Cloudflare/Google).
 * **Machine Learning:** Modelo honesto `HistGradientBoostingClassifier` (Scikit-Learn, Joblib) con 17 características léxicas inmunes a fugas de datos de protocolo.
 * **Frontend:** Angular 22+, TypeScript, diseño moderno y responsivo con tema visual adaptativo.
-* **Testing:** Pytest (174 pruebas unitarias en backend), Vitest (pruebas de frontend).
+* **Testing:** Pytest (179 pruebas unitarias en backend), Vitest (pruebas de frontend).
 * **Evaluación:** Scripts de evaluación con datasets reales (Kaggle Malicious URLs y feeds de amenazas).
 
 ---
@@ -336,6 +336,35 @@ El modelo de Machine Learning no reemplaza la explicabilidad de las heurísticas
   * Si el modelo ML detecta una estructura léxica anómala con alta probabilidad ($\ge 65\%$), añade el factor explicable `ml_lexical_risk` (**+15 puntos**).
   * Si el modelo ML confirma una estructura consistente con sitios legítimos ($\le 25\%$), aplica el factor atenuador `ml_lexical_benign` (**-10 puntos**).
 * **Visibilidad Forense:** El veredicto del modelo se incluye en cada respuesta JSON (`ml_analysis`) y se proyecta en la interfaz web de Angular con distintivos visuales y en el reporte descargable/copiable.
+
+---
+
+## 🔍 Análisis Forense Profundo y Evasión en URLs
+
+El sistema implementa mecanismos avanzados especializados en la estructura, sintaxis y comportamiento de las **URLs**:
+
+### 1. Detección de Técnicas de Evasión en la URL
+* **Doble Codificación Porcentual (`double_url_encoding`):** Identifica secuencias anidadas (como `%252f`, `%253f`, `%252e%252e`) utilizadas comúnmente por ciberdelincuentes para evadir filtros de cortafuegos de aplicaciones web (WAF) e inspección de proxys.
+* **Caracteres Invisibles y Homóglifos Unicode (`unicode_stealth_chars`):** Detecta la inyección encubierta de espacios de ancho cero (`\u200b`, `\u200c`, `\u200d`, `\ufeff`), guiones suaves (`\u00ad`) o caracteres de inversión de texto bidireccional (`\u202e`), diseñados para engañar a la vista humana simulando nombres legítimos.
+* **Direcciones IP en Formato Numérico Ofuscado (`obfuscated_ip`):** Identifica hosts representados en formato decimal entero Dword (ej. `http://2130706433/` $\rightarrow$ `127.0.0.1`), hexadecimal (`0x7f000001`) u octal, técnicas empleadas para evadir listas negras textuales.
+* **Parámetros de Redirección Abierta (`open_redirect_param`):** Examina si la cadena de consulta (*query string*) transporta parámetros de salto (`?redirect=`, `?url=`, `?next=`, `?dest=`) dirigidos hacia dominios externos no verificados.
+
+### 2. Desglose Estructural de la URL (Anatomía Completa)
+Cada consulta descompone automáticamente la URL analizada en sus componentes normalizados:
+* **Esquema:** Protocolo utilizado (`http`, `https`).
+* **Subdominio:** Prefijos anidados (`portal.seguridad`).
+* **Dominio Registrable:** Entidad titular reconocida por la lista de sufijos públicos (`banco-oficial`).
+* **TLD:** Extensión de nivel superior (`.pe`, `.com`, `.gob.pe`).
+* **Ruta y Consulta:** Recursos internos invocados y parámetros transmitidos.
+
+### 3. Trazabilidad Visual de Redirecciones (Interactive Stepper)
+Sustituye las listas planas de texto por un diagrama de flujo interactivo que expone:
+* Cada salto con su respectivo código de estado HTTP (`301`, `302`, `307`, `308`, `200`).
+* Protocolo por salto (`HTTPS` cifrado vs `HTTP` degradado).
+* Detección inmediata de **Cruce de Dominio (*Cross-Domain Redirect*)**, advirtiendo si un enlace cambia de propietario entre el acortador y el destino.
+
+### 4. Sanitización Automática de Enlaces (*Defanged URLs*)
+Permite a los analistas de incidentes y usuarios copiar con un solo clic el enlace en formato neutralizado de seguridad pericial (`hxxps://dominio[.]com/ruta`), garantizando que pueda compartirse en correos, tickets de Jira o Slack sin riesgo de apertura accidental.
 
 ---
 

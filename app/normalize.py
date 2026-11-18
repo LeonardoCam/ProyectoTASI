@@ -75,3 +75,19 @@ def normalize_url(raw: str) -> tuple[str, bool]:
     if scheme in _FORBIDDEN_SCHEMES:
         return url, False                          # se rechazará en assert_safe_url
     return "https://" + url, True
+
+
+def defang_url(url: str) -> str:
+    """Sanitiza una URL para compartirla de forma segura sin riesgo de clic accidental.
+
+    Ejemplo: https://phishing.bcp-portal.xyz/login -> hxxps://phishing[.]bcp-portal[.]xyz/login
+    """
+    from urllib.parse import urlsplit
+    u = re.sub(r"^https://", "hxxps://", url.strip(), flags=re.IGNORECASE)
+    u = re.sub(r"^http://", "hxxp://", u, flags=re.IGNORECASE)
+    parts = urlsplit(u)
+    if parts.netloc:
+        defanged_netloc = parts.netloc.replace(".", "[.]")
+        u = parts._replace(netloc=defanged_netloc).geturl()
+    return u
+
