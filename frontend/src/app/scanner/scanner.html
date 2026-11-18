@@ -45,7 +45,7 @@
             <strong>¿Por qué este resultado?</strong>
             <ul class="factors">
               @for (f of r.factors; track f.id) {
-                <li><span class="pts">+{{ f.points }}</span> {{ f.description }}</li>
+                <li><span class="pts" [class.bonus]="f.points < 0">{{ f.points > 0 ? '+' : '' }}{{ f.points }}</span> {{ f.description }}</li>
               }
             </ul>
           </div>
@@ -76,6 +76,9 @@
             <strong>Antigüedad:</strong>
             {{ r.domain_age_days !== null ? r.domain_age_days + ' días' : 'No disponible (WHOIS protegido)' }}
           </p>
+          @if (r.cert_age_days !== undefined && r.cert_age_days !== null) {
+            <p><strong>Certificado SSL:</strong> Emitido hace {{ r.cert_age_days }} días</p>
+          }
           <p><strong>Protocolo:</strong> {{ r.https ? 'HTTPS' : 'HTTP (sin cifrar)' }}</p>
           <p>
             <strong>Google Safe Browsing:</strong>

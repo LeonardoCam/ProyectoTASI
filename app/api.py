@@ -156,10 +156,18 @@ async def _expand(req: URLRequest, request: Request):
         tasks = [domain_info.domain_age_days(domain), reputation.is_flagged(final_url)]
         if vt is None:
             tasks.append(threat_intel.virustotal(final_url))
-        age, flagged, *rest = await asyncio.gather(*tasks)
-        vt = vt if vt is not None else rest[0]
+        if final_url.startswith("https://"):
+            tasks.append(domain_info.cert_age_days(host))
+        results = await asyncio.gather(*tasks)
+        age, flagged = results[0], results[1]
+        idx = 2
+        if vt is None:
+            vt = results[idx]
+            idx += 1
+        cert_age = results[idx] if len(results) > idx else None
+
         score, factors = heuristics.evaluate(final_url, hops, age, flagged, matches, vt, domain_not_found=not_found,
-                                             redirect_problem=redirect_problem)
+                                             redirect_problem=redirect_problem, cert_age_days=cert_age)
         result = {
             "input_url": req.url.strip(),
             "original_url": url,
@@ -170,6 +178,7 @@ async def _expand(req: URLRequest, request: Request):
             "domain": host,
             "registered_domain": domain,
             "domain_age_days": age,
+            "cert_age_days": cert_age,
             "domain_exists": not not_found,
             "reachable": reachable and not not_found,
             "dns_note": dns_note,

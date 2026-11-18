@@ -7,6 +7,8 @@ from urllib.parse import urlsplit
 
 import tldextract
 
+from . import tranco
+
 # Sin descargas de red: usa la lista de sufijos incluida en el paquete.
 _extract = tldextract.TLDExtract(suffix_list_urls=())
 
@@ -115,18 +117,38 @@ BRAND_DOMAIN_IN_PATH = re.compile(r"(^|[/=.-])(" + "|".join(BRANDS) + r")\.(com|
 # "com"/"net"/"org" como etiqueta del subdominio: apple.com-soporte.evil.net (0,5 % vs 6,8 %).
 TLD_TOKENS_IN_SUBDOMAIN = {"com", "net", "org"}
 
-# Typosquatting: sustitución de caracteres parecidos o un error de 1 letra (linkedln, paypa1, g00gle).
+# Typosquatting: sustitución de caracteres parecidos, distancia de Levenshtein o error de 1 letra.
 _HOMOGLYPHS = str.maketrans({"0": "o", "1": "l", "3": "e", "4": "a", "5": "s", "7": "t", "@": "a"})
 TYPO_TARGETS = (
     "paypal", "netflix", "icloud", "apple", "microsoft", "facebook", "instagram",
     "whatsapp", "amazon", "linkedin", "google", "yahoo", "dropbox", "hotmail", "binance", "coinbase",
     "interbank", "scotiabank", "santander", "bankofamerica", "wellsfargo", "docusign",
+    "viabcp", "bbva", "yape", "plin",
 )
+TYPO_EXCLUSIONS = {"finance", "pine", "pineapple", "stream", "steamer", "sample", "app", "open"}
+
+
+def _levenshtein(s1: str, s2: str) -> int:
+    """Calcula la distancia de edición de Levenshtein entre dos cadenas."""
+    if len(s1) < len(s2):
+        return _levenshtein(s2, s1)
+    if not s2:
+        return len(s1)
+    prev = list(range(len(s2) + 1))
+    for i, c1 in enumerate(s1):
+        curr = [i + 1] + [0] * len(s2)
+        for j, c2 in enumerate(s2):
+            cost = 0 if c1 == c2 else 1
+            curr[j + 1] = min(curr[j] + 1, prev[j + 1] + 1, prev[j] + cost)
+        prev = curr
+    return prev[len(s2)]
 
 
 def _typosquat(token: str) -> Optional[str]:
     """Marca que `token` imita (sin ser ella), o None."""
-    if len(token) < 5:
+    if len(token) < 4:
+        return None
+    if token in TYPO_EXCLUSIONS:
         return None
     norm = token.translate(_HOMOGLYPHS).replace("rn", "m").replace("vv", "w")
     for brand in TYPO_TARGETS:
@@ -134,14 +156,16 @@ def _typosquat(token: str) -> Optional[str]:
             return None
         if norm == brand:
             return brand                      # g00gle, paypa1, rnicrosoft
-        if len(brand) < 6 or norm[0] != brand[0]:
-            # 1 letra de diferencia solo en marcas largas y conservando la inicial (la que más se
-            # nota): evita confundir palabras reales como "finance" con "binance".
+        if len(brand) < 5 or norm[0] != brand[0]:
+            # 1 letra de diferencia solo en marcas reconocidas y conservando la inicial:
+            # evita confundir palabras reales como "finance" con "binance".
             continue
         if len(norm) == len(brand) and sum(a != b for a, b in zip(norm, brand)) == 1:
             return brand                      # linkedln, paypel
         if len(norm) == len(brand) + 1 and any(norm[:i] + norm[i + 1:] == brand for i in range(1, len(norm))):
             return brand                      # paypall, faceboook
+        if _levenshtein(norm, brand) == 1:
+            return brand                      # netfflix, viabc, amazzon
     return None
 
 MEDIUM_THRESHOLD = 30
@@ -187,6 +211,7 @@ def evaluate(
     virustotal: Optional[object] = None,
     domain_not_found: bool = False,
     redirect_problem: Optional[str] = None,
+    cert_age_days: Optional[int] = None,
 ) -> tuple[int, list[dict]]:
     """Devuelve (puntaje 0-100, factores). Todo factor que suma puntos queda justificado."""
     parts = urlsplit(final_url)
@@ -229,10 +254,11 @@ def evaluate(
     # --- Antigüedad del dominio (OSINT/WHOIS)
     reg_domain = registrable_domain(host)
     restricted = any(reg_domain == s or reg_domain.endswith("." + s) for s in RESTRICTED_SUFFIXES)
+    is_trusted = tranco.is_tranco_top(reg_domain) and not threat_matches and not reputation_flagged
+
     if domain_age_days is None:
-        # 10 (antes 15): WHOIS falla en muchos ccTLD legítimos (.pe, .co.uk, .de) por limitación
-        # de la herramienta; junto a "sin HTTPS" ya no basta por sí solo para llegar a MEDIO.
-        if not restricted:
+        # Si el dominio es de gobierno/educación o está en Tranco Top, la falta de WHOIS no se penaliza
+        if not restricted and not is_trusted:
             add("age_unknown", "No se pudo determinar la antigüedad del dominio (WHOIS protegido o no disponible).", 10)
     elif domain_age_days < 30:
         add("age_lt_30", f"Dominio muy reciente ({domain_age_days} días): patrón típico de campañas de fraude.", 40)
@@ -240,6 +266,13 @@ def evaluate(
         add("age_lt_180", f"Dominio reciente ({domain_age_days} días).", 20)
     elif domain_age_days < 365:
         add("age_lt_365", f"Dominio con menos de un año ({domain_age_days} días).", 8)
+
+    # --- Antigüedad del Certificado SSL/TLS
+    if parts.scheme == "https" and cert_age_days is not None:
+        if cert_age_days < 3 and not is_trusted and (domain_age_days is None or domain_age_days < 90):
+            add("cert_very_young", f"Certificado SSL recién emitido ({cert_age_days} días): común en campañas activas de phishing.", 15)
+        elif cert_age_days >= 60 and (domain_age_days is None or domain_age_days >= 180):
+            add("cert_established", f"Certificado SSL consolidado (emitido hace {cert_age_days} días).", -10)
 
     # --- Protocolo y red
     if parts.scheme != "https":
@@ -266,27 +299,23 @@ def evaluate(
             add("bad_tld", f"Extensión de dominio con alta incidencia de abuso (.{tld}).", 10)
         ext = _extract(host)
         if ext.subdomain and ext.subdomain.count(".") >= 4:
-            # 5+ niveles (a.b.c.d.e.dominio.com): casi inexistente en sitios legítimos.
             add("subdomains", "Cadena muy larga de subdominios, técnica común para esconder el dominio real.", 10)
         elif ext.subdomain and ext.subdomain.count(".") >= 2:
-            # 5 (antes 10): en Kaggle aparece en 1,8 % de benignas vs 3,0 % de phishing (señal débil).
             add("subdomains", "Muchos subdominios anidados, técnica común para imitar marcas.", 5)
         if reg_domain in SHORTENERS:
             add("nested_shortener", "El destino final es otro acortador de URL (encadenamiento para ocultar el destino).", 10)
 
         # Suplantación de marca: la marca aparece en el host pero el dominio registrable no es suyo.
-        # Si la etiqueta del dominio ES la marca (amazon.ca, ebay.fr, apple.de) se considera oficial.
         sub_tokens = _tokens(ext.subdomain)
         dom_tokens = _tokens(ext.domain)
         host_tokens = set(sub_tokens) | set(dom_tokens)
-        # Dominios de gobierno/educación no los registra un atacante: no se evalúa suplantación.
         is_brand_domain = ext.domain in BRANDS or reg_domain in _all_official() or restricted
         brand_hit = None
         has_host_action = any(ACTION_WORDS.match(t) for t in host_tokens)
         if not is_brand_domain:
             for brand in BRANDS:
                 if brand in COMMON_WORD_BRANDS and not has_host_action:
-                    continue   # "festival-outlook.com" no es Outlook; "outlook-verify.com" sí es sospechoso
+                    continue
                 if brand in host_tokens or (brand in BRANDS_SUBSTRING and brand in ext.domain):
                     brand_hit = brand
                     add("brand_impersonation",
@@ -301,11 +330,10 @@ def evaluate(
             add("fake_domain_prefix",
                 "El subdominio contiene '.com/.net/.org' para aparentar otro dominio (ej. banco.com-seguro.evil.net).", 15)
 
-        if any(reg_domain == f or host.endswith("." + f) or f in host for f in FREE_HOSTING):
+        if not is_trusted and any(reg_domain == f or host.endswith("." + f) or f in host for f in FREE_HOSTING):
             add("free_hosting", "Alojado en hosting gratuito, DNS dinámico o formularios públicos, muy usados en phishing.", 10)
 
-    # '@' solo engaña en la parte de autoridad (http://banco.com@evil.com/). En la ruta es
-    # normal (medium.com/@usuario, flickr.com/photos/123@N00) y generaba falsos positivos.
+    # '@' solo engaña en la parte de autoridad (http://banco.com@evil.com/).
     if "@" in (parts.netloc or ""):
         add("at_sign", "La URL contiene '@' antes del dominio, usado para disfrazar el dominio real.", 15)
 
@@ -317,7 +345,7 @@ def evaluate(
             add("keywords", f"El dominio acumula palabras típicas de phishing ({', '.join(sorted(host_actions))}).", 20)
         elif host_actions:
             add("keywords", "El dominio contiene palabras típicas de phishing (login, verificación, seguridad, etc.).", 10)
-        elif not is_brand_domain and any(ACTION_WORDS.match(t) for t in path_tokens):
+        elif not is_brand_domain and not is_trusted and any(ACTION_WORDS.match(t) for t in path_tokens):
             add("keywords", "La ruta contiene palabras típicas de phishing (login, verificación, etc.).", 5)
 
         # --- Ruta: señales de kit de phishing subido a un sitio ajeno
@@ -334,5 +362,9 @@ def evaluate(
         if DOMAIN_IN_PATH.search(path) or brand_domain_in_path:
             add("domain_in_path", "La ruta contiene otro nombre de dominio, para aparentar ser ese sitio.", 10)
 
-    score = min(sum(f.points for f in factors), 100)
+    # Atenuador de confianza Tranco si hubo factores leves no críticos
+    if is_trusted and factors:
+        add("tranco_trusted", "Atenuador de confianza: dominio de alta reputación y amplia trayectoria (Top Tranco).", -20)
+
+    score = max(0, min(sum(f.points for f in factors), 100))
     return score, [asdict(f) for f in factors]

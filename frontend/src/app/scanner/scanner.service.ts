@@ -19,6 +19,7 @@ export interface ScanResponse {
   domain: string;
   registered_domain: string;
   domain_age_days: number | null;
+  cert_age_days?: number | null;
   domain_exists: boolean;
   reachable: boolean;
   dns_note: string | null;

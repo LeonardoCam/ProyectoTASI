@@ -13,6 +13,7 @@ import asyncio
 import datetime
 import logging
 import re
+import socket
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
@@ -20,6 +21,7 @@ from whois.whois import NICClient
 
 from . import config
 from .cache import TTLCache
+from .net import SSL_CONTEXT
 
 _whois_cache = TTLCache(ttl=config.CACHE_TTL * 6)
 
@@ -116,4 +118,46 @@ async def domain_age_days(domain: str) -> Optional[int]:
         age = None
 
     _whois_cache.set(domain, (age,))  # se guarda también el "None" para no reintentar
+    return age
+
+
+_cert_cache = TTLCache(ttl=config.CACHE_TTL * 6)
+
+
+def _fetch_cert_age(hostname: str, port: int = 443) -> Optional[int]:
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(min(config.DNS_TIMEOUT, 3.0))
+        conn = SSL_CONTEXT.wrap_socket(sock, server_hostname=hostname)
+        conn.connect((hostname, port))
+        cert = conn.getpeercert()
+        conn.close()
+        if not cert:
+            return None
+        not_before = cert.get("notBefore")
+        if not_before:
+            issued = datetime.datetime.strptime(not_before, "%b %d %H:%M:%S %Y %Z").date()
+            return max((datetime.date.today() - issued).days, 0)
+    except Exception:
+        pass
+    return None
+
+
+async def cert_age_days(hostname: str, port: int = 443) -> Optional[int]:
+    """Días desde la emisión del certificado TLS/SSL, o None si no se pudo determinar."""
+    cached = _cert_cache.get(f"{hostname}:{port}")
+    if cached is not None:
+        return cached[0]
+
+    age: Optional[int] = None
+    try:
+        loop = asyncio.get_running_loop()
+        age = await asyncio.wait_for(
+            loop.run_in_executor(_executor, _fetch_cert_age, hostname, port),
+            timeout=min(config.DNS_TIMEOUT, 3.0) + 1,
+        )
+    except Exception:
+        age = None
+
+    _cert_cache.set(f"{hostname}:{port}", (age,))
     return age
