@@ -133,57 +133,109 @@ Abre **una segunda terminal** y navega a la carpeta `frontend`:
 
 ---
 
-## 🖥️ Guía de Uso del Sistema
+## 🖥️ Tutorial Completo de Uso del Proyecto (Paso a Paso)
 
-### A. Desde la Interfaz Web (Escáner de Enlaces)
-1. Abre [http://localhost:4200](http://localhost:4200).
-2. Pega en el campo de texto el enlace sospechoso o acortado (ejemplo: `https://bit.ly/...` o un dominio con caracteres especiales).
-3. Haz clic en **Escanear**.
-4. La interfaz presentará:
-   * **Veredicto Visual:** Nivel de riesgo (**BAJO** en verde, **MEDIO** en amarillo o **ALTO** en rojo) junto con el porcentaje estimado.
-   * **Cadena de Saltos (Redirecciones):** Lista ordenada de cada salto con su código de estado HTTP (301, 302, etc.) hasta la URL de destino final.
-   * **Factores de Riesgo Explicables:** Desglose punto por punto (ej. antigüedad del dominio en WHOIS, falta de certificado HTTPS, uso de palabras clave sospechosas, coincidencia con listas de amenazas).
-   * **Historial de la Sesión:** Registro temporal en la parte inferior para comparar múltiples enlaces analizados.
+Este sistema permite auditar cualquier enlace web de forma segura antes de abrirlo, expandiendo redirecciones ocultas, verificando defensas contra SSRF y evaluando heurísticamente la probabilidad de fraude o malware.
 
 ---
 
-### B. Desde la API REST
+### 📍 Paso 1: Acceso a la Interfaz Web
+Abre tu navegador web e ingresa a:
+👉 **[http://localhost:4200](http://localhost:4200)**  
+*(Asegúrate de que el backend esté activo en el puerto 8001 y el frontend en el 4200).*
 
-El backend expone endpoints estructurados en formato JSON:
+---
 
-#### 1. Analizar y Expandir URL
-* **Método:** `POST`
-* **Ruta:** `/api/v1/expand`
-* **Cuerpo de la Petición:**
-  ```json
-  {
-    "url": "https://bit.ly/ejemplo-enlace"
-  }
-  ```
-* **Respuesta de Ejemplo:**
-  ```json
-  {
-    "original_url": "https://bit.ly/ejemplo-enlace",
-    "final_url": "https://sitio-destino-final.com/login",
-    "risk_level": "MEDIO",
-    "risk_score": 45,
-    "hops": [
-      { "url": "https://bit.ly/ejemplo-enlace", "status": 301 },
-      { "url": "https://sitio-destino-final.com/login", "status": 200 }
-    ],
-    "factors": [
-      { "id": "domain_age_young", "label": "Dominio registrado recientemente (< 6 meses)", "points": 25 },
-      { "id": "brand_in_path", "label": "Marca bancaria mencionada en la ruta", "points": 20 }
-    ],
-    "analyzed_at": "2026-11-17T20:00:00Z",
-    "cached": false
-  }
-  ```
+### 📍 Paso 2: Ejecución de un Análisis
 
-#### 2. Estado de Salud y Feeds
-* **Método:** `GET`
-* **Ruta:** `/api/v1/health`
-* Devuelve el estado de la API, el tamaño de la caché en memoria y la última actualización de las listas de amenazas.
+Tienes dos alternativas para realizar una prueba:
+
+#### Opción A: Probar con los Botones de Demo Rápida (1 Clic)
+Justo debajo de la barra de búsqueda encontrarás botones preconfigurados para demostraciones y sustentaciones:
+* 🟢 **UPCH (Seguro):** Evalúa `https://upch.edu.pe`. Observarás cómo el **Escudo Tranco** reconoce la institución y aplica un factor atenuador en verde (`-20 pts`), clasificándolo en **BAJO (0/100)**.
+* 🟢 **GitHub Login (Atenuado):** Evalúa `https://github.com/login`. Demuestra que una ruta `/login` en un dominio consolidado no genera falsos positivos.
+* 🟢 **BCP Oficial:** Evalúa `https://bcpzonasegura.viabcp.com`. Comprueba que los dominios legítimos de entidades bancarias son reconocidos como oficiales.
+* 🔴 **Suplantación Marca:** Evalúa `https://netfflix-verify.com`. Observarás el motor de **Typosquatting Dinámico (Levenshtein)** detectando la imitación de Netflix y clasificándolo en **ALTO**.
+
+#### Opción B: Analizar tu propio enlace manual
+1. Pega en la caja de texto cualquier enlace sospechoso, acortado (ej. `bit.ly/ejemplo`, `t.co/abc`) o URL completa.
+2. Presiona la tecla `Enter` o haz clic en el botón **Verificar Destino**.
+
+---
+
+### 📍 Paso 3: Interpretación de los Resultados
+
+La tarjeta de resultados presenta los siguientes componentes visuales:
+
+#### 1. Semáforo y Puntaje de Riesgo (0 a 100)
+| Nivel | Rango | Color | Recomendación al usuario |
+| :---: | :---: | :---: | :--- |
+| **BAJO** | 0 – 29 pts | 🟢 Verde | Enlace seguro. No se detectaron anomalías ni listas de bloqueo. |
+| **MEDIO** | 30 – 59 pts | 🟡 Amarillo | Proceder con cautela. Presenta factores sospechosos (falta de HTTPS, saltos múltiples o dominio reciente). |
+| **ALTO** | 60 – 100 pts | 🔴 Rojo | **¡Peligro!** Enlace con alta probabilidad de phishing o malware. El enlace se desactiva para evitar clics accidentales. |
+
+#### 2. Factores Explicables
+El sistema detalla el porqué de cada puntuación:
+* **Puntos rojos (`+pts`):** Factores de riesgo acumulados (suplantación de marca, certificado recién creado, presencia en listas negras).
+* **Puntos verdes (`-pts`):** Atenuadores de confianza (dominio registrado en el Top de Tranco, certificado SSL maduro con meses de vigencia).
+
+#### 3. Metadatos Forenses de Red
+* **Título web:** Extrae el `<title>` real de la página sin ejecutar scripts peligrosos. Si intenta suplantar una marca bancaria, el motor lo alertará de inmediato.
+* **Certificado SSL:** Muestra la fecha exacta y días de emisión del certificado digital.
+* **Antigüedad WHOIS:** Días de creación del dominio (patrón clave: dominios de menos de 30 días tienen alta correlación con campañas activas de phishing).
+* **Trazabilidad de Saltos:** Detalle cronológico de cada redirección HTTP intermedia (301, 302, etc.) hasta el servidor de destino final.
+
+---
+
+### 📍 Paso 4: Exportación del Reporte Forense
+Para sustentar laboratorios, informes académicos o auditorías de seguridad:
+1. Haz clic en el botón azul **📋 Copiar Reporte Forense** situado en la parte superior del resultado.
+2. El sistema copiará automáticamente al portapapeles un informe formateado en Markdown listo para pegar en Word, Notion o GitHub:
+   ```markdown
+   # Reporte Forense de Evaluación de Enlace (TASI - UPCH)
+   - Fecha y hora: 2026-11-17T20:45:00Z
+   - Enlace ingresado: https://bit.ly/ejemplo
+   - Destino final: https://sitio-final.com/
+   - Nivel de riesgo: BAJO (0/100)
+   - Protocolo: HTTPS (Cifrado)
+   - Certificado SSL: emitido hace 84 días
+   - Factores evaluados:
+     * [-20] Atenuador de confianza: dominio en el Top Tranco.
+   ```
+3. El botón confirmará la acción mostrando temporalmente: `✅ ¡Reporte Forense Copiado!`.
+
+---
+
+### 📍 Paso 5: Calibración y Reporte de Falsos Positivos
+Si consideras que un enlace legítimo fue calificado con demasiado riesgo, utiliza los botones interactivos de feedback:
+* Haz clic en **`👍 Sí`** para confirmar que el veredicto fue acertado.
+* Haz clic en **`⚠️ Reportar`** para registrar un falso positivo. Esto enviará la URL al endpoint de auditoría (`POST /api/v1/feedback`) para su posterior análisis.
+
+---
+
+### 📍 Paso 6: Uso Directo mediante la API REST (Terminal / Scripts)
+
+Si deseas integrar el escáner en scripts de Python o mediante la consola:
+
+#### Petición con cURL:
+```bash
+curl -X POST "http://127.0.0.1:8001/api/v1/expand" \
+     -H "Content-Type: application/json" \
+     -d '{"url": "https://upch.edu.pe"}'
+```
+
+#### Petición con Python:
+```python
+import requests
+
+resp = requests.post("http://127.0.0.1:8001/api/v1/expand", json={"url": "https://github.com/login"})
+data = resp.json()
+
+print(f"Destino: {data['final_url']}")
+print(f"Riesgo: {data['risk_level']} ({data['risk_score']}/100)")
+for factor in data["factors"]:
+    print(f" - [{factor['points']} pts] {factor['description']}")
+```
 
 ---
 
