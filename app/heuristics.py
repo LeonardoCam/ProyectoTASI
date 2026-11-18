@@ -232,6 +232,7 @@ def evaluate(
     page_title: Optional[str] = None,
     security_headers: Optional[dict] = None,
     content_disposition: Optional[str] = None,
+    ml_result: Optional[dict] = None,
 ) -> tuple[int, list[dict]]:
     """Devuelve (puntaje 0-100, factores). Todo factor que suma puntos queda justificado."""
     parts = urlsplit(final_url)
@@ -428,6 +429,22 @@ def evaluate(
             if t_brand:
                 add("title_impersonation",
                     f"El título de la página ('{page_title[:60]}') contiene la marca '{t_brand}' en un dominio no oficial.", 35)
+
+    # Capa 2: Calibración por Machine Learning (modelo honesto) en zona gris/ambigua
+    if ml_result and ml_result.get("available") and not is_trusted:
+        has_critical_threat = bool(
+            reputation_flagged or threat_matches or (virustotal and getattr(virustotal, "malicious", 0) > 0)
+        )
+        current_pre_score = sum(f.points for f in factors)
+        if not has_critical_threat:
+            if ml_result.get("high_risk") and current_pre_score <= 55:
+                prob_pct = (ml_result.get("probability") or 0.0) * 100
+                add("ml_lexical_risk",
+                    f"Modelo de Machine Learning complementario (HistGradientBoosting) detecta patrones léxicos anómalos (probabilidad: {prob_pct:.1f}%).", 15)
+            elif ml_result.get("low_risk") and 0 < current_pre_score <= 45:
+                prob_pct = (ml_result.get("probability") or 0.0) * 100
+                add("ml_lexical_benign",
+                    f"Modelo de Machine Learning complementario confirma estructura léxica consistente con sitios legítimos (probabilidad de riesgo: {prob_pct:.1f}%).", -10)
 
     # Atenuador de confianza Tranco si hubo factores leves no críticos
     if is_trusted and factors:

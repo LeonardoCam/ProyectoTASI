@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from contextlib import asynccontextmanager
 from typing import Optional
 
-from . import config, domain_info, heuristics, reputation, resolver, threat_intel
+from . import config, domain_info, heuristics, ml_model, reputation, resolver, threat_intel
 from .cache import TTLCache
 from .normalize import normalize_url
 from .ratelimit import RateLimiter
@@ -192,11 +192,13 @@ async def _expand(req: URLRequest, request: Request):
             idx += 1
         cert_age = results[idx] if len(results) > idx else None
 
+        ml_eval = ml_model.evaluate_ml(final_url)
         score, factors = heuristics.evaluate(
             final_url, hops, age, flagged, matches, vt, domain_not_found=not_found,
             redirect_problem=redirect_problem, cert_age_days=cert_age,
             page_title=page_title, security_headers=security_headers,
-            content_disposition=content_disposition
+            content_disposition=content_disposition,
+            ml_result=ml_eval,
         )
         result = {
             "input_url": req.url.strip(),
@@ -222,6 +224,13 @@ async def _expand(req: URLRequest, request: Request):
                 "virustotal": None if vt is None else {
                     "malicious": vt.malicious, "suspicious": vt.suspicious, "engines": vt.engines, "link": vt.permalink,
                 },
+            },
+            "ml_analysis": {
+                "available": ml_eval.get("available", False),
+                "probability": ml_eval.get("probability"),
+                "risk_score": ml_eval.get("risk_score"),
+                "risk_level": ml_eval.get("risk_level"),
+                "calibrated_grey_zone": any(f.get("id") in ("ml_lexical_risk", "ml_lexical_benign") for f in factors),
             },
             "risk_score": score,
             "risk_level": heuristics.risk_level(score),

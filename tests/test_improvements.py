@@ -112,3 +112,51 @@ def test_strong_security_headers_recognition():
     score, f = h.evaluate("https://portal-seguro.com/login", hops=2, domain_age_days=300,
                           security_headers=headers)
     assert "strong_security_headers" in ids(f)
+
+
+def test_ml_model_evaluation_and_features():
+    from app import ml_model
+    bundle = ml_model.get_model_bundle()
+    assert bundle is not None
+    assert "model" in bundle
+    assert "features" in bundle
+    assert len(bundle["features"]) == 17
+
+    res = ml_model.evaluate_ml("https://upch.edu.pe/portal")
+    assert res["available"] is True
+    assert isinstance(res["probability"], float)
+    assert 0.0 <= res["probability"] <= 1.0
+    assert res["risk_level"] in ("BAJO", "MEDIO", "ALTO")
+    assert "url_length" in res["features"]
+    assert "count_digits" in res["features"]
+
+
+def test_heuristics_grey_zone_calibration():
+    # URL desconocida con características léxicas sospechosas evaluadas por ML en zona gris
+    mock_ml_high = {"available": True, "high_risk": True, "low_risk": False, "probability": 0.82}
+    score, f = h.evaluate("https://dominio-desconocido-123.com/info", hops=1, domain_age_days=200, ml_result=mock_ml_high)
+    assert "ml_lexical_risk" in ids(f)
+    assert score >= 15
+
+    # URL desconocida con características léxicas benignas confirmadas por ML
+    mock_ml_low = {"available": True, "high_risk": False, "low_risk": True, "probability": 0.08}
+    score_benign, f_benign = h.evaluate("https://dominio-desconocido-123.com/info", hops=1, domain_age_days=200, ml_result=mock_ml_low)
+    assert "ml_lexical_benign" in ids(f_benign)
+    assert score_benign < score
+
+
+def test_ml_does_not_interfere_with_tranco_or_threat_intel():
+    from app import threat_intel
+    mock_ml_high = {"available": True, "high_risk": True, "low_risk": False, "probability": 0.95}
+
+    # En dominio Tranco, el escudo prevalece y no se agrega factor de riesgo ML
+    score_tranco, f_tranco = h.evaluate("https://github.com/login", hops=0, domain_age_days=None, ml_result=mock_ml_high)
+    assert "ml_lexical_risk" not in ids(f_tranco)
+    assert score_tranco == 0
+
+    # Si hay una coincidencia de amenaza confirmada, domina el resultado
+    m = threat_intel.Match("URLhaus", "malware", "malware.example/test")
+    score_threat, f_threat = h.evaluate("https://malware.example/test", hops=0, domain_age_days=100,
+                                        threat_matches=[m], ml_result=mock_ml_high)
+    assert "threat_intel" in ids(f_threat)
+    assert score_threat >= 80

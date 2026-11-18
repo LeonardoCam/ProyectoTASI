@@ -46,8 +46,9 @@ Este sistema es una solución integral que:
 ```
 
 * **Backend:** Python 3.12+, FastAPI, Uvicorn, HTTPX (asíncrono con contexto TLS optimizado), DNS-over-HTTPS (Cloudflare/Google).
+* **Machine Learning:** Modelo honesto `HistGradientBoostingClassifier` (Scikit-Learn, Joblib) con 17 características léxicas inmunes a fugas de datos de protocolo.
 * **Frontend:** Angular 22+, TypeScript, diseño moderno y responsivo con tema visual adaptativo.
-* **Testing:** Pytest (160 pruebas unitarias en backend), Vitest (pruebas de frontend).
+* **Testing:** Pytest (174 pruebas unitarias en backend), Vitest (pruebas de frontend).
 * **Evaluación:** Scripts de evaluación con datasets reales (Kaggle Malicious URLs y feeds de amenazas).
 
 ---
@@ -298,6 +299,43 @@ Puedes personalizar el comportamiento del sistema mediante un archivo `.env` o v
 | `RATE_LIMIT_PER_MIN` | `30` | Límite máximo de peticiones por minuto por dirección IP. |
 | `MAX_REDIRECTS` | `10` | Límite máximo de saltos HTTP permitidos antes de cortar el rastreo. |
 | `REQUEST_DEADLINE` | `40` | Tiempo máximo absoluto en segundos asignado a un análisis antes de timeout. |
+
+---
+
+## 🤖 Inteligencia Artificial y Machine Learning Híbrido (Capa 2)
+
+El sistema incorpora una **arquitectura híbrida defensiva** que combina un motor determinista explicable (Capa 1) con un modelo estadístico de Machine Learning calibrado (Capa 2):
+
+### 1. El problema de la fuga de datos en datasets de Kaggle (Data Leakage)
+En los datasets públicos más citados (como *Malicious URLs dataset* de Kaggle con 651 000 registros):
+* Casi todas las URLs benignas provienen de directorios tipo DMOZ **sin esquema** (`ejemplo.com/articulo`).
+* Todas las URLs maliciosas provienen de repositorios tipo Zone-H **con prefijo HTTP** (`http://malicioso.xyz`).
+* Los modelos clásicos en notebooks de Kaggle obtienen un engañoso **98% de exactitud** simplemente aprendiendo a contar `count_http`, `count_https` y `count_www`.
+* Al evaluar esos mismos modelos frente a amenazas activas en tráfico real de 2026, su capacidad predictiva se desploma a **ROC-AUC 0.26** (peor que el azar).
+
+### 2. Extractor de Características Honestas (17 Atributos Léxicos)
+En `eval/ml_features.py` se implementó una extracción honesta (`honest=True`):
+* Se despoja por completo cualquier esquema (`http://`, `https://`) y prefijo `www.` inicial.
+* Se eliminan las columnas tramposas y se extraen 17 atributos matemáticos y estructurales intrínsecos:
+  * `use_of_ip`, `count_dot`, `count_at`, `count_dir`, `count_embed_domain`, `short_url`, `count_percent`, `count_ques`, `count_hyphen`, `count_equal`, `url_length`, `hostname_length`, `sus_url`, `fd_length`, `tld_length`, `count_digits`, `count_letters`.
+
+### 3. Modelo Ligero en Producción (`HistGradientBoostingClassifier`)
+Mediante `scripts/train_production_model.py`, se entrenó un clasificador de gradient boosting optimizado sobre más de **107 000 muestras consolidadas**:
+* Muestras benignas balanceadas (Kaggle limpio + dominios top de Tranco y peruanos con rutas habituales).
+* Muestras maliciosas modernas (Kaggle phishing/malware + feeds en vivo de URLhaus, OpenPhish, phishing-filter y blackbook).
+* **Métricas en conjunto de prueba:**
+  * Exactitud (*Accuracy*): **89.33%**
+  * Área bajo la curva (*ROC-AUC*): **0.9623**
+  * Tamaño del modelo: **321 KB** en `app/models/url_model.joblib` (arranque ultrarrápido sin impacto en memoria).
+
+### 4. Calibración en la "Zona Gris"
+El modelo de Machine Learning no reemplaza la explicabilidad de las heurísticas de seguridad, sino que actúa como **árbitro en zonas de incertidumbre**:
+* **Alta certeza benigna:** Si el dominio pertenece a Tranco o posee trayectoria sólida, el escudo de confianza prevalece.
+* **Alta certeza maliciosa:** Si el enlace coincide con listas negras activas o malware confirmado, se asigna riesgo crítico directo.
+* **Zona Gris (puntuaciones entre 15 y 55 puntos sin amenazas críticas):**
+  * Si el modelo ML detecta una estructura léxica anómala con alta probabilidad ($\ge 65\%$), añade el factor explicable `ml_lexical_risk` (**+15 puntos**).
+  * Si el modelo ML confirma una estructura consistente con sitios legítimos ($\le 25\%$), aplica el factor atenuador `ml_lexical_benign` (**-10 puntos**).
+* **Visibilidad Forense:** El veredicto del modelo se incluye en cada respuesta JSON (`ml_analysis`) y se proyecta en la interfaz web de Angular con distintivos visuales y en el reporte descargable/copiable.
 
 ---
 

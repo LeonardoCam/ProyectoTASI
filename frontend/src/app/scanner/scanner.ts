@@ -195,6 +195,7 @@ export class ScannerComponent implements OnInit {
       `- Antigüedad de dominio: ${r.domain_age_days !== null ? r.domain_age_days + ' días' : 'No disponible (WHOIS protegido)'}`,
       r.page_title ? `- Título de la página: "${r.page_title}"` : null,
       r.cert_age_days !== undefined && r.cert_age_days !== null ? `- Certificado SSL: emitido hace ${r.cert_age_days} días` : null,
+      r.ml_analysis?.available ? `- Machine Learning (Capa 2): ${r.ml_analysis.risk_level} (${r.ml_analysis.risk_score}% riesgo léxico) [Calibración Zona Gris: ${r.ml_analysis.calibrated_grey_zone ? 'Sí' : 'No'}]` : null,
       '- Factores evaluados:',
       factorsText,
       '- Cadena de trazabilidad:',

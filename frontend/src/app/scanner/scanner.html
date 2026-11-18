@@ -135,6 +135,19 @@
             {{ !r.reputation_checked ? 'No configurado' : hasFactor(r, 'reputation') ? 'Reportado como peligroso' : 'Sin coincidencias' }}
           </p>
           <p><strong>Listas de malware/phishing:</strong> {{ threatText(r) }}</p>
+          @if (r.ml_analysis && r.ml_analysis.available) {
+            <p>
+              <strong>Machine Learning (Capa 2):</strong>
+              <span class="badge" [class.badge-ok]="r.ml_analysis.risk_level === 'BAJO'"
+                                  [class.badge-warn]="r.ml_analysis.risk_level === 'MEDIO'"
+                                  [class.badge-danger]="r.ml_analysis.risk_level === 'ALTO'">
+                🤖 {{ r.ml_analysis.risk_level }} ({{ r.ml_analysis.risk_score }}% riesgo léxico)
+              </span>
+              @if (r.ml_analysis.calibrated_grey_zone) {
+                &nbsp;<span class="badge badge-warn">⚡ Calibración Zona Gris Activa</span>
+              }
+            </p>
+          }
           @if (r.threat_intel.virustotal; as vt) {
             <p>
               <strong>VirusTotal:</strong> {{ vt.malicious }} de {{ vt.engines }} antivirus lo marcan como malicioso ·

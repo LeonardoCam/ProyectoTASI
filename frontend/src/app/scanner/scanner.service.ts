@@ -29,6 +29,13 @@ export interface ScanResponse {
   risk_score: number;
   risk_level: 'BAJO' | 'MEDIO' | 'ALTO';
   factors: RiskFactor[];
+  ml_analysis?: {
+    available: boolean;
+    probability: number | null;
+    risk_score: number | null;
+    risk_level: string;
+    calibrated_grey_zone: boolean;
+  };
   threat_intel: {
     destination_visited: boolean;
     lists_loaded: number;
