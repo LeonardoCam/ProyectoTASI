@@ -1,4 +1,9 @@
 <div class="scanner-container">
+  <div class="top-bar">
+    <button type="button" class="btn-theme" (click)="toggleTheme()" [title]="isDarkTheme ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
+      {{ isDarkTheme ? '☀️ Modo Claro' : '🌙 Modo Oscuro' }}
+    </button>
+  </div>
   <h2>Expansión y Evaluación de URLs</h2>
   <p class="subtitle">Conoce el destino real de un enlace acortado antes de abrirlo.</p>
 
@@ -57,9 +62,14 @@
         <p class="recommendation">{{ recommendation(r.risk_level) }}</p>
 
         <div class="action-bar">
-          <button type="button" class="btn-action" (click)="copyForensicReport(r)">
-            {{ copiedReport ? '✅ ¡Reporte Forense Copiado!' : '📋 Copiar Reporte Forense' }}
-          </button>
+          <div class="action-left">
+            <button type="button" class="btn-action" (click)="copyForensicReport(r)">
+              {{ copiedReport ? '✅ ¡Reporte Forense Copiado!' : '📋 Copiar Reporte Forense' }}
+            </button>
+            <button type="button" class="btn-action btn-qr" (click)="toggleQr()">
+              {{ showQr ? '❌ Ocultar QR' : '📱 Ver QR Móvil' }}
+            </button>
+          </div>
           <div class="feedback-group">
             <span class="feedback-label">¿Veredicto acertado?</span>
             <button type="button" class="btn-fb" (click)="sendFeedback('ok')" [disabled]="feedbackSent" title="El resultado fue correcto">
@@ -73,6 +83,14 @@
             }
           </div>
         </div>
+
+        @if (showQr) {
+          <div class="qr-box">
+            <p><strong>Auditoría Móvil (WhatsApp / SMS / Smishing):</strong></p>
+            <img [src]="getQrUrl()" alt="Código QR del destino" width="160" height="160" class="qr-img" />
+            <p class="muted">Escanea con la cámara de tu teléfono para auditar el destino final.</p>
+          </div>
+        }
 
         @if (r.factors.length) {
           <div class="section">
@@ -117,6 +135,14 @@
             <p><strong>Certificado SSL:</strong> Emitido hace {{ r.cert_age_days }} días</p>
           }
           <p><strong>Protocolo:</strong> {{ r.https ? 'HTTPS' : 'HTTP (sin cifrar)' }}</p>
+          @if (r.security_headers) {
+            <p>
+              <strong>Cabeceras de Seguridad:</strong>
+              <span class="badge" [class.badge-ok]="r.security_headers['hsts']">HSTS: {{ r.security_headers['hsts'] ? 'Sí' : 'No' }}</span>&nbsp;
+              <span class="badge" [class.badge-ok]="r.security_headers['csp']">CSP: {{ r.security_headers['csp'] ? 'Sí' : 'No' }}</span>&nbsp;
+              <span class="badge" [class.badge-ok]="r.security_headers['x_frame_options']">Anti-Clickjacking: {{ r.security_headers['x_frame_options'] ? 'Sí' : 'No' }}</span>
+            </p>
+          }
           <p>
             <strong>Google Safe Browsing:</strong>
             {{ !r.reputation_checked ? 'No configurado' : hasFactor(r, 'reputation') ? 'Reportado como peligroso' : 'Sin coincidencias' }}

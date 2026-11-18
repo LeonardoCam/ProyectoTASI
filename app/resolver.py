@@ -40,6 +40,8 @@ class Expansion:
     chain: list[str] = field(default_factory=list)   # URLs visitadas, incluida la inicial y la final
     status_code: Optional[int] = None
     title: Optional[str] = None
+    security_headers: dict[str, bool] = field(default_factory=dict)
+    content_disposition: Optional[str] = None
 
     @property
     def hops(self) -> int:
@@ -113,6 +115,22 @@ async def expand(url: str, transport: Optional[httpx.AsyncBaseTransport] = None)
             except Exception:
                 pass
 
-            return Expansion(final_url=current, chain=chain, status_code=status, title=title)
+            # Inspección de cabeceras de seguridad y descarga
+            sec_headers = {
+                "hsts": "strict-transport-security" in resp.headers,
+                "csp": "content-security-policy" in resp.headers,
+                "x_frame_options": "x-frame-options" in resp.headers,
+                "x_content_type_options": "x-content-type-options" in resp.headers,
+            }
+            cdisp = resp.headers.get("content-disposition")
+
+            return Expansion(
+                final_url=current,
+                chain=chain,
+                status_code=status,
+                title=title,
+                security_headers=sec_headers,
+                content_disposition=cdisp,
+            )
 
     raise TooManyRedirectsError(f"La cadena supera el máximo de {config.MAX_REDIRECTS} saltos.")

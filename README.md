@@ -248,11 +248,14 @@ Con el entorno virtual activado, ejecuta desde la raíz:
 ```bash
 pytest
 ```
-*Se ejecutarán **167 pruebas unitarias** que validan:*
+*Se ejecutarán **171 pruebas unitarias** que validan:*
 * Protección contra inyecciones SSRF y bypasses numéricos de IP (octal, decimal, hexadecimal).
 * Motor de heurísticas de riesgo con atenuadores de confianza Tranco y reglas compuestas.
 * Detección de typosquatting dinámico por distancia de Levenshtein.
 * Inspección de antigüedad y madurez de certificados TLS/SSL.
+* Detección de descargas de ejecutables maliciosos (`.exe`, `.apk`, `.scr`, `.bat`, etc.).
+* Cálculo de entropía matemática de Shannon para detección de DGAs de malware.
+* Auditoría de cabeceras de seguridad web (HSTS, CSP, Anti-Clickjacking).
 * Resolución DoH resiliente (con/sin `www`, dominios IDNA con tildes y caracteres especiales).
 * Funcionamiento de la caché TTL e inteligencia de amenazas.
 

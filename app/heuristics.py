@@ -1,5 +1,6 @@
 """Motor heurístico determinista: puntaje de riesgo 0-100 con factores explicables."""
 import ipaddress
+import math
 import re
 from dataclasses import dataclass, asdict
 from typing import Optional, Sequence
@@ -8,6 +9,22 @@ from urllib.parse import urlsplit
 import tldextract
 
 from . import tranco
+
+DANGEROUS_EXTENSIONS = {
+    ".exe", ".scr", ".bat", ".cmd", ".vbs", ".vbe", ".js", ".jse", ".wsf", ".wsh",
+    ".ps1", ".ps1xml", ".ps2", ".apk", ".msi", ".iso", ".img", ".hta", ".cpl", ".jar", ".dll",
+}
+
+
+def shannon_entropy(s: str) -> float:
+    """Calcula la entropía matemática de Shannon (bits/carácter) de una cadena."""
+    if not s:
+        return 0.0
+    freq: dict[str, int] = {}
+    for c in s:
+        freq[c] = freq.get(c, 0) + 1
+    length = len(s)
+    return -sum((count / length) * math.log2(count / length) for count in freq.values())
 
 # Sin descargas de red: usa la lista de sufijos incluida en el paquete.
 _extract = tldextract.TLDExtract(suffix_list_urls=())
@@ -213,6 +230,8 @@ def evaluate(
     redirect_problem: Optional[str] = None,
     cert_age_days: Optional[int] = None,
     page_title: Optional[str] = None,
+    security_headers: Optional[dict] = None,
+    content_disposition: Optional[str] = None,
 ) -> tuple[int, list[dict]]:
     """Devuelve (puntaje 0-100, factores). Todo factor que suma puntos queda justificado."""
     parts = urlsplit(final_url)
@@ -282,6 +301,32 @@ def evaluate(
         add("hops_many", f"Cadena de redirección larga ({hops} saltos).", 20)
     elif hops >= 3:
         add("hops_some", f"Varias redirecciones encadenadas ({hops} saltos).", 10)
+
+    # --- Detección de descargas potencialmente peligrosas (Malware Drive-by)
+    path_lower = (parts.path or "").lower()
+    found_ext = None
+    for ext in DANGEROUS_EXTENSIONS:
+        if path_lower.endswith(ext) or f"{ext}?" in path_lower:
+            found_ext = ext
+            break
+    if not found_ext and content_disposition:
+        cd_lower = content_disposition.lower()
+        for ext in DANGEROUS_EXTENSIONS:
+            if ext in cd_lower:
+                found_ext = ext
+                break
+    if found_ext:
+        add("executable_download",
+            f"El destino apunta directamente a la descarga de un archivo ejecutable ({found_ext}), técnica común de malware.", 45)
+
+    # --- Auditoría de Cabeceras de Seguridad Web
+    if security_headers and isinstance(security_headers, dict):
+        has_hsts = security_headers.get("hsts", False)
+        has_csp = security_headers.get("csp", False)
+        has_xfo = security_headers.get("x_frame_options", False)
+        if has_hsts and has_csp and has_xfo:
+            add("strong_security_headers",
+                "El destino implementa cabeceras de seguridad estrictas (HSTS, CSP y X-Frame-Options).", -10)
 
     # --- Características léxicas de la URL
     is_ip = False
@@ -362,6 +407,13 @@ def evaluate(
         brand_domain_in_path = not is_brand_domain and bool(BRAND_DOMAIN_IN_PATH.search(path))
         if DOMAIN_IN_PATH.search(path) or brand_domain_in_path:
             add("domain_in_path", "La ruta contiene otro nombre de dominio, para aparentar ser ese sitio.", 10)
+
+        # Entropía de Shannon en el nombre del dominio (detección de DGAs de malware/botnets)
+        if len(ext.domain) >= 11 and not is_trusted:
+            ent = shannon_entropy(ext.domain)
+            if ent >= 3.38:
+                add("high_entropy_domain",
+                    f"El nombre del dominio posee alta entropía ({ent:.2f} bits/carácter), característico de generadores automáticos (DGA).", 20)
 
         # Suplantación en el título de la página (phishing con dominio camuflado)
         if page_title and not is_brand_domain and not is_trusted:

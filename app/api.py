@@ -174,7 +174,9 @@ async def _expand(req: URLRequest, request: Request):
     async def _assess(final_url: str, chain: list[str], hops: int, visited: bool, matches, vt=None,
                       not_found: bool = False, reachable: bool = True,
                       redirect_problem: Optional[str] = None,
-                      page_title: Optional[str] = None) -> dict:
+                      page_title: Optional[str] = None,
+                      security_headers: Optional[dict] = None,
+                      content_disposition: Optional[str] = None) -> dict:
         host = (urlsplit(final_url).hostname or "").lower()
         domain = heuristics.registrable_domain(host)
         tasks = [domain_info.domain_age_days(domain), reputation.is_flagged(final_url)]
@@ -190,9 +192,12 @@ async def _expand(req: URLRequest, request: Request):
             idx += 1
         cert_age = results[idx] if len(results) > idx else None
 
-        score, factors = heuristics.evaluate(final_url, hops, age, flagged, matches, vt, domain_not_found=not_found,
-                                             redirect_problem=redirect_problem, cert_age_days=cert_age,
-                                             page_title=page_title)
+        score, factors = heuristics.evaluate(
+            final_url, hops, age, flagged, matches, vt, domain_not_found=not_found,
+            redirect_problem=redirect_problem, cert_age_days=cert_age,
+            page_title=page_title, security_headers=security_headers,
+            content_disposition=content_disposition
+        )
         result = {
             "input_url": req.url.strip(),
             "original_url": url,
@@ -205,6 +210,7 @@ async def _expand(req: URLRequest, request: Request):
             "domain_age_days": age,
             "cert_age_days": cert_age,
             "page_title": page_title,
+            "security_headers": security_headers or {},
             "domain_exists": not not_found,
             "reachable": reachable and not not_found,
             "dns_note": dns_note,
@@ -263,4 +269,8 @@ async def _expand(req: URLRequest, request: Request):
             if (m.source, m.matched) not in seen:
                 seen.add((m.source, m.matched))
                 matches.append(m)
-    return await _assess(exp.final_url, exp.chain, exp.hops, True, matches, page_title=exp.title)
+    return await _assess(
+        exp.final_url, exp.chain, exp.hops, True, matches,
+        page_title=exp.title, security_headers=exp.security_headers,
+        content_disposition=exp.content_disposition,
+    )

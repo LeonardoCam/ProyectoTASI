@@ -83,3 +83,32 @@ def test_score_never_negative():
     # Puntaje nunca baja de 0 incluso si los atenuadores superan los puntos
     score, f = h.evaluate("https://github.com/", hops=0, domain_age_days=4000, cert_age_days=100)
     assert score == 0
+
+
+def test_shannon_entropy_and_dga_detection():
+    # Entropía de palabra natural vs DGA aleatorio
+    assert h.shannon_entropy("universidad") < 3.2
+    assert h.shannon_entropy("xkj918fa92zq") >= 3.38
+
+    # Dominio con patrón DGA suma factor de alta entropía
+    score, f = h.evaluate("https://xkj918fa92zq.info/", hops=0, domain_age_days=100)
+    assert "high_entropy_domain" in ids(f)
+
+
+def test_executable_download_detection():
+    # URL que apunta a ejecutable malicioso directo (.exe / .apk / .scr)
+    score, f = h.evaluate("https://portal-descargas.com/setup.exe", hops=0, domain_age_days=100)
+    assert "executable_download" in ids(f)
+    assert score >= 45
+
+    # Cabecera Content-Disposition con archivo ejecutable
+    score_cd, f_cd = h.evaluate("https://sitio-actualiza.com/get", hops=0, domain_age_days=100,
+                                content_disposition='attachment; filename="update.apk"')
+    assert "executable_download" in ids(f_cd)
+
+
+def test_strong_security_headers_recognition():
+    headers = {"hsts": True, "csp": True, "x_frame_options": True, "x_content_type_options": True}
+    score, f = h.evaluate("https://portal-seguro.com/login", hops=2, domain_age_days=300,
+                          security_headers=headers)
+    assert "strong_security_headers" in ids(f)

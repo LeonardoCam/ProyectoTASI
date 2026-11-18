@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -6,7 +6,7 @@ import { ScannerService, ScanResponse } from './scanner.service';
 
 type Level = 'BAJO' | 'MEDIO' | 'ALTO';
 
-/** Una búsqueda de esta sesión. Vive solo en memoria: se borra al recargar la página. */
+/** Una búsqueda de esta sesión o recuperada de localStorage. */
 export interface HistoryItem {
   url: string;              // lo que escribió el usuario
   finalUrl: string | null;  // destino real (null si hubo error)
@@ -26,7 +26,7 @@ const MAX_HISTORY = 20;
   templateUrl: './scanner.html',
   styleUrls: ['./scanner.css'],
 })
-export class ScannerComponent {
+export class ScannerComponent implements OnInit {
   inputUrl = '';
   result: ScanResponse | null = null;
   isLoading = false;
@@ -35,8 +35,51 @@ export class ScannerComponent {
   copiedReport = false;
   feedbackSent = false;
   feedbackMsg = '';
+  isDarkTheme = false;
+  showQr = false;
 
   constructor(private scannerService: ScannerService, private cdr: ChangeDetectorRef) {}
+
+  ngOnInit(): void {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        const saved = localStorage.getItem('tasi_history');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            this.history = parsed.map((h: any) => ({ ...h, at: new Date(h.at) }));
+          }
+        }
+        const savedTheme = localStorage.getItem('tasi_theme');
+        if (savedTheme === 'dark') {
+          this.isDarkTheme = true;
+          document.body.classList.add('dark-theme');
+        }
+      } catch {}
+    }
+  }
+
+  toggleTheme(): void {
+    this.isDarkTheme = !this.isDarkTheme;
+    if (typeof window !== 'undefined' && window.localStorage) {
+      if (this.isDarkTheme) {
+        document.body.classList.add('dark-theme');
+        localStorage.setItem('tasi_theme', 'dark');
+      } else {
+        document.body.classList.remove('dark-theme');
+        localStorage.setItem('tasi_theme', 'light');
+      }
+    }
+  }
+
+  toggleQr(): void {
+    this.showQr = !this.showQr;
+  }
+
+  getQrUrl(): string {
+    if (!this.result?.final_url) return '';
+    return `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(this.result.final_url)}`;
+  }
 
   analyzeUrl() {
     const url = this.inputUrl.trim();
@@ -86,9 +129,14 @@ export class ScannerComponent {
     }
   }
 
-  /** Agrega al inicio; si el enlace ya estaba, lo mueve arriba en vez de duplicarlo. */
+  /** Agrega al inicio; si el enlace ya estaba, lo mueve arriba en vez de duplicarlo. Guarda en localStorage. */
   addToHistory(item: HistoryItem): void {
     this.history = [item, ...this.history.filter((h) => h.url !== item.url)].slice(0, MAX_HISTORY);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        localStorage.setItem('tasi_history', JSON.stringify(this.history));
+      } catch {}
+    }
   }
 
   reanalyze(item: HistoryItem): void {
@@ -98,6 +146,11 @@ export class ScannerComponent {
 
   clearHistory(): void {
     this.history = [];
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        localStorage.removeItem('tasi_history');
+      } catch {}
+    }
   }
 
   minutes(seconds: number): string {
