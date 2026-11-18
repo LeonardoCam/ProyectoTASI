@@ -62,14 +62,9 @@
         <p class="recommendation">{{ recommendation(r.risk_level) }}</p>
 
         <div class="action-bar">
-          <div class="action-left">
-            <button type="button" class="btn-action" (click)="copyForensicReport(r)">
-              {{ copiedReport ? '✅ ¡Reporte Forense Copiado!' : '📋 Copiar Reporte Forense' }}
-            </button>
-            <button type="button" class="btn-action btn-qr" (click)="toggleQr()">
-              {{ showQr ? '❌ Ocultar QR' : '📱 Ver QR Móvil' }}
-            </button>
-          </div>
+          <button type="button" class="btn-action" (click)="copyForensicReport(r)">
+            {{ copiedReport ? '✅ ¡Reporte Forense Copiado!' : '📋 Copiar Reporte Forense' }}
+          </button>
           <div class="feedback-group">
             <span class="feedback-label">¿Veredicto acertado?</span>
             <button type="button" class="btn-fb" (click)="sendFeedback('ok')" [disabled]="feedbackSent" title="El resultado fue correcto">
@@ -83,14 +78,6 @@
             }
           </div>
         </div>
-
-        @if (showQr) {
-          <div class="qr-box">
-            <p><strong>Auditoría Móvil (WhatsApp / SMS / Smishing):</strong></p>
-            <img [src]="getQrUrl()" alt="Código QR del destino" width="160" height="160" class="qr-img" />
-            <p class="muted">Escanea con la cámara de tu teléfono para auditar el destino final.</p>
-          </div>
-        }
 
         @if (r.factors.length) {
           <div class="section">

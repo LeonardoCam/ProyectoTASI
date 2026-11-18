@@ -36,7 +36,6 @@ export class ScannerComponent implements OnInit {
   feedbackSent = false;
   feedbackMsg = '';
   isDarkTheme = false;
-  showQr = false;
 
   constructor(private scannerService: ScannerService, private cdr: ChangeDetectorRef) {}
 
@@ -70,15 +69,6 @@ export class ScannerComponent implements OnInit {
         localStorage.setItem('tasi_theme', 'light');
       }
     }
-  }
-
-  toggleQr(): void {
-    this.showQr = !this.showQr;
-  }
-
-  getQrUrl(): string {
-    if (!this.result?.final_url) return '';
-    return `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(this.result.final_url)}`;
   }
 
   analyzeUrl() {
