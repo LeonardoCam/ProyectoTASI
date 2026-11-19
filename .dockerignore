@@ -3,3 +3,4 @@ frontend
 tests
 __pycache__
 venv
+eval/data/*.csv

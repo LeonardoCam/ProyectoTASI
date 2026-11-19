@@ -4,3 +4,5 @@ httpx
 python-whois
 pydantic
 tldextract
+joblib
+scikit-learn
