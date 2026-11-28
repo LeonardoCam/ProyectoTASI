@@ -4,16 +4,16 @@
     "n": 200,
     "tp": 80,
     "fn": 20,
-    "fp": 5,
-    "tn": 95,
+    "fp": 4,
+    "tn": 96,
     "recall": 0.8,
-    "precision": 0.9411764705882353,
-    "f1": 0.8648648648648648,
-    "fpr": 0.05,
-    "auc": 0.9576,
+    "precision": 0.9523809523809523,
+    "f1": 0.8695652173913043,
+    "fpr": 0.04,
+    "auc": 0.9822,
     "casos_dificiles": {
       "n": 35,
-      "errores": 25
+      "errores": 24
     }
   },
   "distribucion": {
@@ -85,6 +85,24 @@
       0,
       0,
       0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
       10,
       10,
       10,
@@ -95,26 +113,8 @@
       10,
       10,
       10,
-      10,
-      10,
-      10,
-      10,
-      10,
-      10,
-      10,
-      10,
-      20,
-      20,
-      20,
-      20,
-      20,
-      20,
-      20,
-      20,
-      20,
       20,
       30,
-      40,
       50,
       50,
       50
@@ -144,7 +144,6 @@
       60,
       60,
       70,
-      70,
       75,
       75,
       75,
@@ -153,14 +152,6 @@
       80,
       80,
       80,
-      80,
-      80,
-      80,
-      85,
-      85,
-      85,
-      85,
-      85,
       85,
       85,
       85,
@@ -182,9 +173,18 @@
       95,
       95,
       95,
-      95,
-      95,
-      95,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
       100,
       100,
       100,
@@ -225,24 +225,24 @@
   "expansion": {
     "tasa_exito": 1.0,
     "exactitud_destino": 1.0,
-    "enlace_muerto_status": 504
+    "enlace_muerto_status": 200
   },
   "bucles": {
     "casos": 20,
-    "cortados": 20
+    "cortados": 0
   },
   "ssrf": {
     "intentos": 25,
     "bloqueados": 25
   },
   "latencia_sin_cache_ms": {
-    "p50": 368.00810000204365,
-    "p95": 693.4825999996974
+    "p50": 400.236199999199,
+    "p95": 711.1045999990893
   },
   "cache": {
     "consultas": 100,
     "aciertos": 100,
-    "p95_ms": 0.9105999997700565
+    "p95_ms": 1.730100000713719
   },
   "carga": {
     "usuarios": 20,
@@ -250,39 +250,112 @@
     "errores_5xx": 0
   },
   "explicabilidad": {
-    "medio_alto": 85,
-    "con_factor": 85
+    "medio_alto": 84,
+    "con_factor": 84
   },
   "ejemplos": {
     "alto": {
-      "input_url": "https://bit.ly/kfmney7",
-      "original_url": "https://bit.ly/kfmney7",
-      "final_url": "http://bbva-cuenta-xk7.xyz/premio",
+      "input_url": "https://shorturl.at/5fanzdc",
+      "original_url": "https://shorturl.at/5fanzdc",
+      "final_url": "https://xn--interbank-9xd-ceb.com/seguro",
+      "defanged_url": "hxxps://xn--interbank-9xd-ceb[.]com/seguro",
       "redirect_chain": [
-        "https://bit.ly/kfmney7",
-        "https://trk.cgvs9-cdn.com/r/kcm3a9",
-        "https://l.7adsx-cdn.com/r/ckd2rq",
-        "https://l.zyv42-cdn.com/r/b5cjjv",
-        "http://bbva-cuenta-xk7.xyz/premio"
+        "https://shorturl.at/5fanzdc",
+        "https://go.hxncq-cdn.com/r/munbw6",
+        "https://redir.ua3dm-cdn.com/r/jgdpcb",
+        "https://go.8x8ae-cdn.com/r/fnafdn",
+        "https://xn--interbank-9xd-ceb.com/seguro"
       ],
+      "chain_details": [
+        {
+          "hop": 1,
+          "url": "https://shorturl.at/5fanzdc",
+          "status_code": 301,
+          "domain": "shorturl.at",
+          "https": true,
+          "cross_domain": false
+        },
+        {
+          "hop": 2,
+          "url": "https://go.hxncq-cdn.com/r/munbw6",
+          "status_code": 301,
+          "domain": "go.hxncq-cdn.com",
+          "https": true,
+          "cross_domain": true
+        },
+        {
+          "hop": 3,
+          "url": "https://redir.ua3dm-cdn.com/r/jgdpcb",
+          "status_code": 301,
+          "domain": "redir.ua3dm-cdn.com",
+          "https": true,
+          "cross_domain": true
+        },
+        {
+          "hop": 4,
+          "url": "https://go.8x8ae-cdn.com/r/fnafdn",
+          "status_code": 302,
+          "domain": "go.8x8ae-cdn.com",
+          "https": true,
+          "cross_domain": true
+        },
+        {
+          "hop": 5,
+          "url": "https://xn--interbank-9xd-ceb.com/seguro",
+          "status_code": 200,
+          "domain": "interbanká-9xd.com",
+          "https": true,
+          "cross_domain": true
+        }
+      ],
+      "url_components": {
+        "scheme": "https",
+        "subdomain": null,
+        "domain": "xn--interbank-9xd-ceb",
+        "tld": "com",
+        "registered_domain": "xn--interbank-9xd-ceb.com",
+        "port": null,
+        "path": "/seguro",
+        "query": null,
+        "fragment": null
+      },
       "hops": 4,
-      "https": false,
-      "domain": "bbva-cuenta-xk7.xyz",
-      "registered_domain": "bbva-cuenta-xk7.xyz",
-      "domain_age_days": 1,
+      "https": true,
+      "domain": "xn--interbank-9xd-ceb.com",
+      "registered_domain": "xn--interbank-9xd-ceb.com",
+      "domain_age_days": 27,
+      "cert_age_days": null,
+      "page_title": null,
+      "security_headers": {
+        "hsts": false,
+        "csp": false,
+        "x_frame_options": false,
+        "x_content_type_options": false
+      },
+      "domain_exists": true,
+      "reachable": true,
+      "dns_note": null,
       "reputation_checked": false,
+      "threat_intel": {
+        "destination_visited": true,
+        "lists_loaded": 0,
+        "matches": [],
+        "virustotal": null
+      },
+      "ml_analysis": {
+        "available": true,
+        "probability": 0.2603,
+        "risk_score": 26.0,
+        "risk_level": "BAJO",
+        "calibrated_grey_zone": false
+      },
       "risk_score": 100,
       "risk_level": "ALTO",
       "factors": [
         {
           "id": "age_lt_30",
-          "description": "Dominio muy reciente (1 días): patrón típico de campañas de fraude.",
+          "description": "Dominio muy reciente (27 días): patrón típico de campañas de fraude.",
           "points": 40
-        },
-        {
-          "id": "no_https",
-          "description": "El destino final no usa HTTPS (comunicación sin cifrar).",
-          "points": 15
         },
         {
           "id": "hops_some",
@@ -290,39 +363,130 @@
           "points": 10
         },
         {
-          "id": "bad_tld",
-          "description": "Extensión de dominio con alta incidencia de abuso (.xyz).",
-          "points": 10
+          "id": "punycode",
+          "description": "El dominio usa punycode (posible suplantación con caracteres similares).",
+          "points": 15
         },
         {
           "id": "brand_impersonation",
-          "description": "El dominio menciona la marca 'bbva' pero no pertenece a ella (bbva-cuenta-xk7.xyz).",
+          "description": "El dominio menciona la marca 'interbank' pero no pertenece a ella (xn--interbank-9xd-ceb.com).",
           "points": 30
+        },
+        {
+          "id": "high_entropy_domain",
+          "description": "El nombre del dominio posee alta entropía (3.45 bits/carácter), característico de generadores automáticos (DGA).",
+          "points": 20
         }
       ],
+      "analyzed_at": "2026-11-28T05:31:26+00:00",
       "cached": false,
-      "elapsed_ms": 2
+      "cache_expires_in_s": 3600,
+      "elapsed_ms": 448
     },
     "bajo": {
-      "input_url": "https://ow.ly/3p7ttq2",
-      "original_url": "https://ow.ly/3p7ttq2",
-      "final_url": "https://www.linkedin.com/9j692",
+      "input_url": "https://shorturl.at/n65q3yr",
+      "original_url": "https://shorturl.at/n65q3yr",
+      "final_url": "https://www.upch.edu.pe/noticias/k9jkd",
+      "defanged_url": "hxxps://www[.]upch[.]edu[.]pe/noticias/k9jkd",
       "redirect_chain": [
-        "https://ow.ly/3p7ttq2",
-        "https://trk.xbj57-cdn.com/r/3rmz4c",
-        "https://www.linkedin.com/9j692"
+        "https://shorturl.at/n65q3yr",
+        "https://go.a8gww-cdn.com/r/mzm289",
+        "https://trk.ympxq-cdn.com/r/wrwpyd",
+        "https://www.upch.edu.pe/noticias/k9jkd"
       ],
-      "hops": 2,
+      "chain_details": [
+        {
+          "hop": 1,
+          "url": "https://shorturl.at/n65q3yr",
+          "status_code": 301,
+          "domain": "shorturl.at",
+          "https": true,
+          "cross_domain": false
+        },
+        {
+          "hop": 2,
+          "url": "https://go.a8gww-cdn.com/r/mzm289",
+          "status_code": 302,
+          "domain": "go.a8gww-cdn.com",
+          "https": true,
+          "cross_domain": true
+        },
+        {
+          "hop": 3,
+          "url": "https://trk.ympxq-cdn.com/r/wrwpyd",
+          "status_code": 301,
+          "domain": "trk.ympxq-cdn.com",
+          "https": true,
+          "cross_domain": true
+        },
+        {
+          "hop": 4,
+          "url": "https://www.upch.edu.pe/noticias/k9jkd",
+          "status_code": 200,
+          "domain": "www.upch.edu.pe",
+          "https": true,
+          "cross_domain": true
+        }
+      ],
+      "url_components": {
+        "scheme": "https",
+        "subdomain": "www",
+        "domain": "upch",
+        "tld": "edu.pe",
+        "registered_domain": "upch.edu.pe",
+        "port": null,
+        "path": "/noticias/k9jkd",
+        "query": null,
+        "fragment": null
+      },
+      "hops": 3,
       "https": true,
-      "domain": "www.linkedin.com",
-      "registered_domain": "linkedin.com",
-      "domain_age_days": 8074,
+      "domain": "www.upch.edu.pe",
+      "registered_domain": "upch.edu.pe",
+      "domain_age_days": 7042,
+      "cert_age_days": null,
+      "page_title": null,
+      "security_headers": {
+        "hsts": false,
+        "csp": false,
+        "x_frame_options": false,
+        "x_content_type_options": false
+      },
+      "domain_exists": true,
+      "reachable": true,
+      "dns_note": null,
       "reputation_checked": false,
+      "threat_intel": {
+        "destination_visited": true,
+        "lists_loaded": 0,
+        "matches": [],
+        "virustotal": null
+      },
+      "ml_analysis": {
+        "available": true,
+        "probability": 0.8045,
+        "risk_score": 80.5,
+        "risk_level": "ALTO",
+        "calibrated_grey_zone": false
+      },
       "risk_score": 0,
       "risk_level": "BAJO",
-      "factors": [],
+      "factors": [
+        {
+          "id": "hops_some",
+          "description": "Varias redirecciones encadenadas (3 saltos).",
+          "points": 10
+        },
+        {
+          "id": "tranco_trusted",
+          "description": "Atenuador de confianza: dominio de alta reputación y amplia trayectoria (Top Tranco).",
+          "points": -20
+        }
+      ],
+      "analyzed_at": "2026-11-28T05:31:26+00:00",
       "cached": false,
-      "elapsed_ms": 1
+      "cache_expires_in_s": 3600,
+      "elapsed_ms": 36
     }
   }
 }

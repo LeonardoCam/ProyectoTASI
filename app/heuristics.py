@@ -270,6 +270,7 @@ def evaluate(
     security_headers: Optional[dict] = None,
     content_disposition: Optional[str] = None,
     ml_result: Optional[dict] = None,
+    unresolved_shortener: bool = False,
 ) -> tuple[int, list[dict]]:
     """Devuelve (puntaje 0-100, factores). Todo factor que suma puntos queda justificado."""
     parts = urlsplit(final_url)
@@ -312,11 +313,27 @@ def evaluate(
     # --- Antigüedad del dominio (OSINT/WHOIS)
     reg_domain = registrable_domain(host)
     restricted = any(reg_domain == s or reg_domain.endswith("." + s) for s in RESTRICTED_SUFFIXES)
-    is_trusted = tranco.is_tranco_top(reg_domain) and not threat_matches and not reputation_flagged
+    is_shortener_domain = reg_domain in SHORTENERS
+    is_free_host = any(reg_domain == f or host.endswith("." + f) or f in host for f in FREE_HOSTING)
+    is_trusted = (
+        tranco.is_tranco_top(reg_domain)
+        and not is_shortener_domain
+        and not is_free_host
+        and not threat_matches
+        and not reputation_flagged
+        and not unresolved_shortener
+    )
+
+    if unresolved_shortener:
+        add(
+            "unresolved_shortener",
+            "El enlace pertenece a un acortador de URL y no fue posible verificar su destino final real; proceda con precaución.",
+            35,
+        )
 
     if domain_age_days is None:
         # Si el dominio es de gobierno/educación o está en Tranco Top, la falta de WHOIS no se penaliza
-        if not restricted and not is_trusted:
+        if not restricted and not is_trusted and not is_shortener_domain:
             add("age_unknown", "No se pudo determinar la antigüedad del dominio (WHOIS protegido o no disponible).", 10)
     elif domain_age_days < 30:
         add("age_lt_30", f"Dominio muy reciente ({domain_age_days} días): patrón típico de campañas de fraude.", 40)
@@ -326,7 +343,7 @@ def evaluate(
         add("age_lt_365", f"Dominio con menos de un año ({domain_age_days} días).", 8)
 
     # --- Antigüedad del Certificado SSL/TLS
-    if parts.scheme == "https" and cert_age_days is not None:
+    if parts.scheme == "https" and cert_age_days is not None and not is_shortener_domain and not unresolved_shortener:
         if cert_age_days < 3 and not is_trusted and (domain_age_days is None or domain_age_days < 90):
             add("cert_very_young", f"Certificado SSL recién emitido ({cert_age_days} días): común en campañas activas de phishing.", 15)
         elif cert_age_days >= 60 and (domain_age_days is None or domain_age_days >= 180):
@@ -358,7 +375,7 @@ def evaluate(
             f"El destino apunta directamente a la descarga de un archivo ejecutable ({found_ext}), técnica común de malware.", 45)
 
     # --- Auditoría de Cabeceras de Seguridad Web
-    if security_headers and isinstance(security_headers, dict):
+    if security_headers and isinstance(security_headers, dict) and not is_shortener_domain and not unresolved_shortener:
         has_hsts = security_headers.get("hsts", False)
         has_csp = security_headers.get("csp", False)
         has_xfo = security_headers.get("x_frame_options", False)
@@ -441,18 +458,25 @@ def evaluate(
             if path_brand:
                 add("brand_in_path", f"La ruta menciona la marca '{path_brand}' en un sitio que no es suyo.", 10)
         path = parts.path or ""
-        if CMS_KIT_PATH.search(path):
+        has_cms = bool(CMS_KIT_PATH.search(path))
+        has_hash = bool(HASH_DIR.search(path))
+        if has_cms:
             add("cms_path", "La ruta está dentro de carpetas internas de un CMS (wp-content, administrator...), típico de sitios comprometidos.", 10)
-        if HASH_DIR.search(path):
+        if has_hash:
             add("hash_dir", "La ruta tiene una carpeta con un hash aleatorio, patrón de kits de phishing.", 10)
+        if has_cms and has_hash:
+            add("cms_phishing_kit", "Combinación crítica: carpeta interna de CMS junto con directorio hash aleatorio (kit de phishing alojado en sitio comprometido).", 15)
         brand_domain_in_path = not is_brand_domain and bool(BRAND_DOMAIN_IN_PATH.search(path))
         if DOMAIN_IN_PATH.search(path) or brand_domain_in_path:
             add("domain_in_path", "La ruta contiene otro nombre de dominio, para aparentar ser ese sitio.", 10)
 
         # Entropía de Shannon en el nombre del dominio (detección de DGAs de malware/botnets)
-        if len(ext.domain) >= 11 and not is_trusted:
-            ent = shannon_entropy(ext.domain)
-            if ent >= 3.38:
+        # Se ignoran los guiones para no penalizar nombres comerciales descriptivos largos en español.
+        clean_dom = ext.domain.replace("-", "")
+        if len(clean_dom) >= 12 and not is_trusted:
+            ent = shannon_entropy(clean_dom)
+            has_digits = any(c.isdigit() for c in clean_dom)
+            if ent >= 3.60 or (ent >= 3.38 and has_digits):
                 add("high_entropy_domain",
                     f"El nombre del dominio posee alta entropía ({ent:.2f} bits/carácter), característico de generadores automáticos (DGA).", 20)
 
@@ -482,7 +506,8 @@ def evaluate(
 
         # Evasión por vector de redirección abierta en los parámetros de la URL (?redirect=, ?next=)
         if parts.query and not is_trusted:
-            from urllib.parse import parse_qsl
+            from urllib.parse import parse_qsl, unquote
+            redirect_flagged = False
             for qk, qv in parse_qsl(parts.query, keep_blank_values=True):
                 if qk.lower() in OPEN_REDIRECT_PARAMS:
                     qv_clean = qv.strip().lower()
@@ -492,12 +517,22 @@ def evaluate(
                             if qv_host and qv_host != host and not host.endswith("." + qv_host):
                                 add("open_redirect_param",
                                     f"La URL contiene un parámetro de redirección externa ({qk}={qv[:35]}...) hacia otro dominio, vector común de phishing por salto.", 15)
+                                redirect_flagged = True
                                 break
                         except Exception:
                             pass
+            if not redirect_flagged:
+                q_decoded = unquote(parts.query).lower()
+                if "http://" in q_decoded or "https://" in q_decoded:
+                    m_emb = re.search(r"https?://([a-z0-9.-]+)", q_decoded)
+                    if m_emb:
+                        emb_host = m_emb.group(1)
+                        if emb_host and emb_host != host and not host.endswith("." + emb_host):
+                            add("embedded_url_in_query",
+                                f"La consulta de la URL incrusta otro dominio externo ({emb_host}), técnica común de camuflaje en enlaces de phishing.", 15)
 
     # Capa 2: Calibración por Machine Learning (modelo honesto) en zona gris/ambigua
-    if ml_result and ml_result.get("available") and not is_trusted:
+    if ml_result and ml_result.get("available") and not is_trusted and not is_shortener_domain and not unresolved_shortener:
         has_critical_threat = bool(
             reputation_flagged or threat_matches or (virustotal and getattr(virustotal, "malicious", 0) > 0)
         )

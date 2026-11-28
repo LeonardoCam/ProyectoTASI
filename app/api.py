@@ -177,9 +177,12 @@ async def _expand(req: URLRequest, request: Request):
                       page_title: Optional[str] = None,
                       security_headers: Optional[dict] = None,
                       content_disposition: Optional[str] = None,
-                      chain_details: Optional[list[dict]] = None) -> dict:
+                      chain_details: Optional[list[dict]] = None,
+                      unresolved_shortener: bool = False) -> dict:
         host = (urlsplit(final_url).hostname or "").lower()
         domain = heuristics.registrable_domain(host)
+        if not visited and domain in heuristics.SHORTENERS:
+            unresolved_shortener = True
         tasks = [domain_info.domain_age_days(domain), reputation.is_flagged(final_url)]
         if vt is None:
             tasks.append(threat_intel.virustotal(final_url))
@@ -200,6 +203,7 @@ async def _expand(req: URLRequest, request: Request):
             page_title=page_title, security_headers=security_headers,
             content_disposition=content_disposition,
             ml_result=ml_eval,
+            unresolved_shortener=unresolved_shortener,
         )
         u_parts = urlsplit(final_url)
         u_ext = heuristics._extract(host)

@@ -85,9 +85,13 @@
         @if (r.factors.length) {
           <div class="section">
             <strong>¿Por qué este resultado?</strong>
+            <p class="muted" style="margin: 4px 0 8px;">Los valores con <strong>+</strong> suman riesgo; los valores con <strong>🛡️ Bono</strong> son atenuadores de confianza que reducen el riesgo.</p>
             <ul class="factors">
               @for (f of r.factors; track f.id) {
-                <li><span class="pts" [class.bonus]="f.points < 0">{{ f.points > 0 ? '+' : '' }}{{ f.points }}</span> {{ f.description }}</li>
+                <li>
+                  <span class="pts" [class.bonus]="f.points < 0">{{ f.points > 0 ? '+' + f.points + ' pts' : '🛡️ ' + f.points + ' pts (Bono)' }}</span>
+                  {{ f.description }}
+                </li>
               }
             </ul>
           </div>

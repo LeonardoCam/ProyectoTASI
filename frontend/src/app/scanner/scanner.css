@@ -229,8 +229,8 @@
 .section p { margin: 4px 0; word-break: break-all; }
 .factors { padding-left: 0; list-style: none; margin: 8px 0 0; }
 .factors li { margin: 6px 0; font-size: 14px; }
-.pts { display: inline-block; min-width: 34px; font-weight: 700; color: #b91c1c; }
-.pts.bonus { color: #15803d; }
+.pts { display: inline-block; min-width: 68px; font-weight: 700; color: #b91c1c; background: #fef2f2; padding: 2px 6px; border-radius: 6px; margin-right: 6px; font-size: 12px; text-align: center; }
+.pts.bonus { color: #15803d; background: #f0fdf4; border: 1px solid #bbf7d0; }
 .chain { list-style: decimal; padding-left: 28px; color: #4b5563; font-size: 14px; word-break: break-all; }
 .muted { color: #6b7280; font-size: 13px; }
 .meta { margin: 16px 0 0; color: #9ca3af; font-size: 12px; text-align: right; }
